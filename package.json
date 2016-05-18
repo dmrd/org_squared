@@ -1,0 +1,33 @@
+{
+  "name": "org_squared",
+  "version": "0.0.0",
+  "description": "Hello Exponent!",
+  "author": "David Dohan",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "test": "mocha --compilers js:babel-core/register --require ./test/test_helper.js --recursive",
+    "test:watch": "npm run test -- --watch"
+  },
+  "exp": {
+    "sdkVersion": "5.0.0"
+  },
+  "dependencies": {
+    "react": "^0.14.5",
+    "react-native": "github:exponentjs/react-native#sdk-5.0.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.8.0",
+    "babel-core": "^6.8.0",
+    "babel-preset-es2015": "^6.6.0",
+    "chai": "^3.5.0",
+    "chai-immutable": "^1.5.4",
+    "immutable": "^3.8.1",
+    "mocha": "^2.4.5"
+  },
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  }
+}
