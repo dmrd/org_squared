@@ -1,6 +1,6 @@
 {
   var org = require('./org');
-  var doc = new org.Document;
+  var doc = org.createDoc();
   function pprint(object) {
     console.log(JSON.stringify(object, null, 2))
   }
@@ -11,13 +11,13 @@
  */
 document = section:section? headlines:headline* {
   if (!!section) {
-    org.addChild(doc, doc.getRoot(), section);
+    org.addChild(getCursor(doc), section);
   }
-  var cursor = doc.getRoot();
+  var cursor = org.getCursor(doc);
   for (let headline of headlines) {
-    cursor = org.insertHeadline(doc, cursor, headline);
+    cursor = org.insertHeadline(cursor, headline);
   }
-  return doc;
+  return org.getDoc(cursor);
 }
 
 headline = stars:'*'+ ' '* line:line? body:(section)? {
