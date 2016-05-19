@@ -10,10 +10,11 @@
  * Document structure
  */
 document = section:section? headlines:headline* {
+  var cursor = doc;
   if (!!section) {
-    org.addChild(getCursor(doc), section);
+    cursor = org.addChild(doc, section);
   }
-  var cursor = org.getCursor(doc);
+
   for (let headline of headlines) {
     cursor = org.insertHeadline(cursor, headline);
   }

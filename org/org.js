@@ -1,5 +1,6 @@
 /*
  * Functions for creating and manipulating a parsed Org mode file.
+ * Once a node is in the tree, only refer to through a Cursor
  */
 import {
   List,
@@ -37,9 +38,9 @@ export const Node = Record({
 /***** Creating nodes *****/
 
 export function createDoc() {
-  return Node({
+  return createCursor(Node({
     type: TYPES.document
-  });
+  }));
 }
 
 export function headlineNode(level, content, children = []) {
@@ -96,7 +97,7 @@ export function cursorPath(cursor) {
 /*
  Create a cursor into `doc` with `path`
  */
-export function getCursor(doc, path = []) {
+function createCursor(doc, path = []) {
   return Cursor.from(doc, path, () => {});
 }
 
@@ -107,7 +108,7 @@ export function getCursor(doc, path = []) {
  Return the root document node for a cursor
  */
 export function getDoc(cursor) {
-  return cursor._rootData;
+  return createCursor(cursor._rootData);
 }
 
 /*
@@ -116,7 +117,7 @@ export function getDoc(cursor) {
 export function getParent(cursor) {
   var path = cursorPath(cursor);
   var newPath = path.slice(0, path.length - 1);
-  return getCursor(getDoc(cursor), newPath);
+  return getDoc(cursor).getIn(newPath);
 }
 
 
