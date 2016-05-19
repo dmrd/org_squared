@@ -1,9 +1,30 @@
 var org = require('../org/org');
+var parser = require('../org/org_parser');
 import {expect} from 'chai';
+import {List} from 'immutable';
 
-
+// Helper function for debugging
 function pprint(object) {
   console.log(JSON.stringify(object, null, 2))
+}
+
+function node(type, content, children=List()) {
+  return {type: type, content: content, children: List(children)};
+}
+
+// Do a recursive comparison
+function checkStructure(expected, actual) {
+  if (expected.type !== undefined && expected.content !== undefined) {
+    expect(actual.type).to.equal(expected.type);
+    expect(actual.content).to.equal(expected.content);
+    checkStructure(expected.children, actual.children);
+  } else {
+    var i = 0;
+    for (let part of expected) {
+      checkStructure(part, actual.get(i));
+      i++;
+    }
+  }
 }
 
 describe('utils', () => {
@@ -31,11 +52,32 @@ describe('inserting', () => {
       var h2_c = org.insertHeadline(doc, h1_c, h2);
       var h3_c = org.insertHeadline(doc, h2_c, h3);
       root = doc.getRoot();
-      pprint(root)
-      expect(root.children.size).to.equal(2)
-      expect(root.children.get(0).content).to.equal(1)
-      expect(root.children.get(1).content).to.equal(3)
-      expect(root.children.get(0).children.get(0).content).to.equal(2)
+      var h = org.TYPES.headline;
+      checkStructure(
+        [node(h, 1, [
+          node(h, 2)
+        ]),
+         node(h, 3)
+        ],
+        root.children
+      );
+    });
+  });
+});
+
+describe('parser', () => {
+  describe('simple', () => {
+    it('can parse just headlines', () => {
+      var h = org.TYPES.headline;
+      var doc = parser.parse("** 1\n***2\n*3\n");
+      checkStructure(
+        [node(h, '1', [
+          node(h, '2')
+        ]),
+         node(h, '3')
+        ],
+        doc.getRoot().children
+      )
     });
   });
 });

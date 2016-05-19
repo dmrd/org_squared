@@ -9,7 +9,7 @@ function pprint(object) {
  * Headline: STARS KEYWORD PRIORITY TITLE TAGS
  */
 
-const TYPES = {
+export const TYPES = {
   document: Symbol("document"),
   headline: Symbol("headline"),
   section: Symbol("section")
@@ -67,9 +67,10 @@ export function docNode() {
   return Node({type: TYPES.document});
 }
 
-export function headlineNode(level, content) {
+export function headlineNode(level, content, children=[]) {
   return Node({type: TYPES.headline,
                meta: Map({level: level}),
+               children: List(children),
                content: content});
 }
 
