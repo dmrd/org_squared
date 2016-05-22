@@ -8,7 +8,7 @@ import {
   Map,
   Record
 } from 'immutable';
-var Cursor = require('immutable/contrib/cursor');
+let Cursor = require('immutable/contrib/cursor');
 
 function pprint(object) {
   console.log(JSON.stringify(object, null, 2));
@@ -80,13 +80,17 @@ export function level(node) {
   return node.meta.get('level');
 }
 
+export function numChildren(cursor) {
+  return cursor.children.size;
+}
+
 
 /***** Cursor logic *****/
 
 /*
  Return the path corresponding to cursor
  */
-export function cursorPath(cursor) {
+export function getPath(cursor) {
   return cursor._keyPath;
 }
 
@@ -111,16 +115,56 @@ export function getDoc(cursor) {
  * Return parent of node
  */
 export function getParent(cursor) {
-  var path = cursorPath(cursor);
-  var newPath = path.slice(0, path.length - 1);
+  let path = getPath(cursor);
+  // -2 so that ['children', 1] -> []
+  let newPath = path.slice(0, path.length - 2);
   return getDoc(cursor).getIn(newPath);
+}
+
+export function getChild(cursor, i) {
+  return cursor.children.get(i);
+}
+
+export function nextSibling(cursor) {
+  let path = getPath(cursor);
+  if (path.size == 0) {
+    // At root node
+    return undefined;
+  } else {
+    let n = path[path.length - 1];
+    if (typeof(n) !== 'number') {
+      console.log("ERROR: Last element in path is not a number", path);
+      return undefined;
+    }
+    n += +1;
+    let newPath = path.slice(0, path.length - 1).concat(n);
+    return getDoc(cursor).getIn(newPath);
+  }
+}
+
+export function next(cursor) {
+  let child = getChild(cursor, 0);
+  if (child != undefined) {
+    return child;
+  }
+
+  let sibling = nextSibling(cursor);
+  if (sibling != undefined) {
+    return sibling;
+  }
+
+  let parent = getParent(cursor);
+  if (parent != undefined) {
+    return nextSibling(parent);
+  }
+  return undefined;
 }
 
 
 /***** Modifying tree *****/
 
 export function addChild(cursor, newNode) {
-  var children = cursor.children.push(newNode);
+  let children = cursor.children.push(newNode);
   return children.get(children.size - 1);
 }
 
@@ -129,11 +173,21 @@ export function insertHeadline(cursor, headline) {
     console.log("Node is not a headline");
     return cursor;
   }
-  var headlineLevel = level(headline);
+  let headlineLevel = level(headline);
 
   while (level(cursor) >= headlineLevel) {
     cursor = getParent(cursor);
   }
 
   return addChild(cursor, headline);
+}
+
+
+/***** Export *****/
+
+/*
+ * Export node as text
+ */
+export function text(cursor, recursive = false) {
+  return cursor.content;
 }
