@@ -11,20 +11,16 @@ import {
 var Cursor = require('immutable/contrib/cursor');
 
 function pprint(object) {
-  console.log(JSON.stringify(object, null, 2))
+  console.log(JSON.stringify(object, null, 2));
 }
-
-/* TODO
- * - Iterator
- */
 
 
 /***** Basic node type *****/
 
 export const TYPES = {
-  document: Symbol("document"),
-  headline: Symbol("headline"),
-  section: Symbol("section")
+  document: 'document',
+  headline: 'headline',
+  section: 'section'
 };
 
 export const Node = Record({

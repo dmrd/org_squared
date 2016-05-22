@@ -9,7 +9,7 @@ import {
 
 // Helper function for debugging
 function pprint(object) {
-  console.log(JSON.stringify(object, null, 2))
+  console.log(JSON.stringify(object, null, 2));
 }
 
 function node(type, content, children = List()) {
@@ -81,7 +81,7 @@ describe('parser', () => {
           node(h, '3')
         ],
         doc.children
-      )
+      );
     });
   });
 });
