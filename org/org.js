@@ -80,6 +80,10 @@ export function level(node) {
   return node.meta.get('level');
 }
 
+export function getMeta(cursor, property) {
+  return cursor.getIn(['meta', property]);
+}
+
 export function numChildren(cursor) {
   return cursor.children.size;
 }
@@ -162,6 +166,10 @@ export function next(cursor) {
 
 
 /***** Modifying tree *****/
+
+export function setMeta(cursor, property, value) {
+  return cursor.get('meta').set(property, value)
+}
 
 export function addChild(cursor, newNode) {
   let children = cursor.children.push(newNode);
