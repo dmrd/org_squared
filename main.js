@@ -7,16 +7,14 @@ let Org = require('./org/org');
 let Parser = require('./org/org_parser');
 let React = require('react-native');
 let {
-  Animated,
   AppRegistry,
-  Easing,
-  Image,
-  ScrollView,
-  StatusBarIOS,
   StyleSheet,
   Text,
-  View,
+  ListView,
+  View
 } = React;
+
+let OrgView = require('./OrgView');
 
 let ExScreen = require('./ExScreen');
 
@@ -27,23 +25,21 @@ class OrgSquared extends React.Component {
     super(props, context);
     this.state = {
       headerColor: '#007aff',
-      doc: Parser.parse("** 1\n section 1\n*** 2\n* 3\n section 3\n has \n several \n lines")
+      doc: Parser.parse(
+        "* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1\n* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1\n* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1\n* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1"
+      )
     };
   }
 
   render() {
     return (
       <ExScreen
-        title="org_squared"
-        headerColor={this.state.headerColor}
-        scrollEnabled={!this.state.isBoxPressed}
-        style={styles.container}>
-
-        {/* Try editing this text and reloading your project in Exponent */}
-        <Text style={styles.paragraph}>
-        Look!  I can make an app!
-        </Text>
-      </ExScreen>
+          title="org_squared"
+          headerColor={this.state.headerColor}
+          scrollEnabled={!this.state.isBoxPressed}
+      style={styles.container}>
+        <OrgView doc={this.state.doc} />
+        </ExScreen>
     );
   }
 }

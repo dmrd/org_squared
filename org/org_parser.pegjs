@@ -10,7 +10,7 @@
  * Document structure
  */
 document = section:section? headlines:headline* {
-  var cursor = doc;
+  let cursor = doc;
   if (!!section) {
     cursor = org.addChild(doc, section);
   }
@@ -22,7 +22,7 @@ document = section:section? headlines:headline* {
 }
 
 headline = stars:'*'+ ' '* line:line? body:(section)? {
-  var children = !!body ? [body] : []
+  let children = !!body ? [body] : []
   return org.headlineNode(stars.length, line, children);
 }
 

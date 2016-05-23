@@ -10,8 +10,8 @@ import {
 } from 'immutable';
 let Cursor = require('immutable/contrib/cursor');
 
-function pprint(object) {
-  console.log(JSON.stringify(object, null, 2));
+export function pprint(object) {
+  console.warn(JSON.stringify(object, null, 2));
 }
 
 
@@ -185,7 +185,7 @@ export function insertHeadline(cursor, headline) {
 
 /***** Export *****/
 
-/*
+/* 
  * Export node as text
  */
 export function text(cursor, recursive = false) {
