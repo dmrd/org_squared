@@ -44,59 +44,55 @@ export function orgAction(state=defaultState, action) {
 
 /***** Components *****/
 
-function Node({node}) {
+function Node({ node }) {
   
 }
 
-function Children({node}) {
+function Children({ node }) {
   
 }
 
-function renderChildren(node) {
+function RenderChildren({ node, key }) {
   const nodes = [];
-  Org.pprint(node);
   node = Org.getChild(node, 0);
-  Org.pprint(node);
   let i = 0;
   while (node !== undefined) {
-    nodes.push(renderNode(node));
-    //nodes.push(renderNode(node, i));
+    nodes.push({node: node, key: i});
     node = Org.nextSibling(node);
     i += 1;
   }
-  return nodes;
+  return (<View>
+          {
+            nodes.map(({node, i}) => (<RenderNode node={node} key={i} />))
+          }
+          </View>);
 }
 
-//export function renderNode(node, i) {
-export function renderNode(doc) {
-  return (<Text> a </Text>)
-  // return null;
-  // let children = null;
-  // if (Org.numChildren(node) > 0) {
-  //   if (Org.getMeta(node, 'hidden') !== true) {
-  //     children =
-  //     (<View style={styles.children}>
-  //        {renderChildren(node)}
-  //     </View>);
-  //   } else {
-  //     children = (<Text>...</Text>);
-  //   }
-  // }
-  //return (
-  //  <View key={i}>
-  //    <TouchableHighlight >
-  //      <Text>
-  //        {node.content}
-  //      </Text>
-  //    </TouchableHighlight>
-  //    {children}
-  //  </View>
-  //);
+function RenderNode({ node, key }) {
+   let children = null;
+   if (Org.numChildren(node) > 0) {
+     if (Org.getMeta(node, 'hidden') !== true) {
+       children =
+         (<View style={styles.children} key={key}>
+          <RenderChildren node={node} key={key}/>
+       </View>);
+     } else {
+       children = (<Text>...</Text>);
+     }
+   }
+  return (
+    <View key={key}>
+      <TouchableHighlight >
+        <Text>
+          {node.content}
+        </Text>
+      </TouchableHighlight>
+      {children}
+    </View>
+  );
 }
 
-console.warn(renderNode)
-//renderNode = connect(mapStateToProps)(renderNode);
-console.warn(renderNode)
+//RenderNode = connect(mapStateToProps)(RenderNode);
 
 
 function rnDispatch(dispatch) {
@@ -107,11 +103,11 @@ function rnState(state, ownprops) {
   return ownprops;
 }
 
-export function renderDoc(doc) {
+function renderDocNode({ doc }) {
   return (
       <View style={styles.tree}>
       <Text>Test</Text>
-      {renderChildren(doc.doc)}
+      <RenderChildren node={doc} />
     </View>
   );
 }
@@ -122,7 +118,7 @@ function mapStateToProps(state) {
   };
 }
 
-renderDoc = connect(mapStateToProps)(renderDoc);
+export let renderDoc = connect(mapStateToProps)(renderDocNode);
 
 const styles = {
   tree: {
