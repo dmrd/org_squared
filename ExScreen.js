@@ -24,7 +24,6 @@ class ExScreen extends React.Component {
   render() {
     let {
       title,
-      headerColor,
       scrollEnabled,
       ...props,
     } = this.props;
@@ -44,7 +43,7 @@ class ExScreen extends React.Component {
         <ExHeader
           title={title}
           scrollDistance={this.state.scrollDistance}
-          style={[styles.header, { backgroundColor: headerColor }]}
+          style={[styles.header, { backgroundColor: '#007aff' }]}
         />
       </View>
     );
