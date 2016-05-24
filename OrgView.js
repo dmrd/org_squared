@@ -1,15 +1,15 @@
 import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
 
+let React = require('react-native');
 let Org = require('./org/org');
 let Parser = require('./org/org_parser');
-let React = require('react-native');
 
 let {
   Text,
   TouchableHighlight,
   View
 } = React;
+
 
 /***** Actions *****/
 
@@ -22,12 +22,13 @@ function toggleVisibility (node) {
   };
 }
 
-function createTestDoc() {
-  return Parser.parse(
-    "* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1\n* A\nsection A\n** A.A\n** A.B\n*** A.B.A\n*** A.B.B\n** A.C\n* B\n** B.A");
-}
 
 /***** Reducers *****/
+
+function createTestDoc() {
+  return Parser.parse(
+    "* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1\n* A\nsection A\n** A.A\n** A.B\n*** A.B.A\n*** A.B.B\n** A.C\n* B\n** B.A\n* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1\n* A\nsection A\n** A.A\n** A.B\n*** A.B.A\n*** A.B.B\n** A.C\n* B\n** B.A");
+}
 
 export function orgAction(state=createTestDoc(), action) {
   switch (action.type) {
@@ -40,11 +41,13 @@ export function orgAction(state=createTestDoc(), action) {
   }
 }
 
+
 /***** Org helpers *****/
 
 function isHidden(node) {
   return !!Org.getMeta(node, 'hidden');
 }
+
 
 /***** Components *****/
 
@@ -55,7 +58,7 @@ function Node({ node }) {
       <NodeContent node={node}/>
     </View>
     <View style={styles.children}>
-    <Children node={node}/>
+      <Children node={node}/>
     </View>
   </View>);
 }
@@ -80,10 +83,7 @@ let CollapseNodeButton = connect(() => ({}),
                                  (dispatch) => ({ onPress: (node) => dispatch(toggleVisibility(node)) }))(NodeButton);
 
 function NodeContent({ node }) {
-  return (
-    <Text>
-      {node.content}
-    </Text>);
+  return (<Text> {node.content} </Text>);
 }
 
 function HiddenContent() {
@@ -104,9 +104,9 @@ function Children({ node }) {
     i += 1;
   }
   return (<View>
-      {
-        nodes.map(({node, key}) => (<Node node={node} key={key} />))
-      }
+    {
+      nodes.map(({node, key}) => (<Node node={node} key={key} />))
+    }
   </View>);
 }
 
@@ -118,36 +118,16 @@ function DocNodeRender({ doc }) {
   );
 }
 
-function mapStateToProps(state) {
-  return {
-    doc: state.doc
-  };
-}
-
-export let DocNode = connect(mapStateToProps)(DocNodeRender);
+export let DocNode = connect((state) => ({ doc: state.doc }))(DocNodeRender);
 
 const styles = {
   tree: {
     padding: 10
-  },
-  rootnode: {
-    paddingBottom: 10
-  },
-  node: {
-    paddingTop: 10
   },
   item: {
     flexDirection: 'row'
   },
   children: {
     paddingLeft: 20
-  },
-  icon: {
-    paddingRight: 10,
-    color: '#333',
-    alignSelf: 'center'
-  },
-  roottext: {
-    fontSize: 18
   }
 };
