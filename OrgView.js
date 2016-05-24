@@ -22,20 +22,19 @@ function toggleVisibility (node) {
   };
 }
 
-const defaultState = {
-  doc: Parser.parse(
-    "* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1\n* A\nsection A\n** A.A\n** A.B\n*** A.B.A\n*** A.B.B\n** A.C\n* B\n** B.A"
-  )
-};
+function createTestDoc() {
+  return Parser.parse(
+    "* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1\n* A\nsection A\n** A.A\n** A.B\n*** A.B.A\n*** A.B.B\n** A.C\n* B\n** B.A");
+}
 
 /***** Reducers *****/
 
-export function orgAction(state=defaultState, action) {
+export function orgAction(state=createTestDoc(), action) {
   switch (action.type) {
     case TOGGLE_VISIBILITY:
       let current = isHidden(action.node)
       let updated = Org.setMeta(action.node, 'hidden', !current);
-      return { doc: Org.getDoc(updated) };
+      return Org.getDoc(updated);
     default:
       return state;
   }
@@ -62,6 +61,10 @@ function Node({ node }) {
 }
 
 function NodeButton({ node, onPress }) {
+  if (Org.numChildren(node) == 0) {
+    return <Text>* </Text>
+  }
+
   let text = '-';
   if (isHidden(node)) {
     text = '+';
@@ -110,7 +113,7 @@ function Children({ node }) {
 function DocNodeRender({ doc }) {
   return (
     <View style={styles.tree}>
-      <Node node={doc} />
+      <Children node={doc} />
     </View>
   );
 }

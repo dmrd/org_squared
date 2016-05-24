@@ -5,7 +5,7 @@
 
 let React = require('react-native');
 import { Provider } from 'react-redux';
-import { createStore } from 'redux';
+import { combineReducers, createStore } from 'redux';
 let {
   AppRegistry,
   StyleSheet,
@@ -21,7 +21,9 @@ let OrgView = require('./OrgView');
 let HORIZ_SPACE = 12;
 
 function OrgSquared() {
-  const store = createStore(OrgView.orgAction);
+  const store = createStore(combineReducers({
+    doc: OrgView.orgAction
+  }));
   return (
     <Provider store={store}>
       <ExScreen
