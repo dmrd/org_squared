@@ -48,47 +48,64 @@ function Node({node}) {
   
 }
 
+function Children({node}) {
+  
+}
+
 function renderChildren(node) {
   const nodes = [];
+  Org.pprint(node);
   node = Org.getChild(node, 0);
+  Org.pprint(node);
   let i = 0;
   while (node !== undefined) {
-    nodes.push(renderNode(node, i));
+    nodes.push(renderNode(node));
+    //nodes.push(renderNode(node, i));
     node = Org.nextSibling(node);
     i += 1;
   }
   return nodes;
 }
 
-function renderNode(node, i, onPress) {
-  let children = null;
-  if (Org.numChildren(node) > 0) {
-    if (Org.getMeta(node, 'hidden') !== true) {
-      children =
-      (<View style={styles.children}>
-         {renderChildren(node)}
-      </View>);
-    } else {
-      children = (<Text>...</Text>);
-    }
-  }
-  return (
-    <View key={i}>
-      <TouchableHighlight >
-        <Text>
-          {node.content}
-        </Text>
-      </TouchableHighlight>
-      {children}
-    </View>
-  );
+//export function renderNode(node, i) {
+export function renderNode(doc) {
+  return (<Text> a </Text>)
+  // return null;
+  // let children = null;
+  // if (Org.numChildren(node) > 0) {
+  //   if (Org.getMeta(node, 'hidden') !== true) {
+  //     children =
+  //     (<View style={styles.children}>
+  //        {renderChildren(node)}
+  //     </View>);
+  //   } else {
+  //     children = (<Text>...</Text>);
+  //   }
+  // }
+  //return (
+  //  <View key={i}>
+  //    <TouchableHighlight >
+  //      <Text>
+  //        {node.content}
+  //      </Text>
+  //    </TouchableHighlight>
+  //    {children}
+  //  </View>
+  //);
 }
 
-function mapDispatchToProps(dispatch) {
+console.warn(renderNode)
+//renderNode = connect(mapStateToProps)(renderNode);
+console.warn(renderNode)
+
+
+function rnDispatch(dispatch) {
   return { onPress: (node) => dispatch(toggleVisibility(node)) };
 }
 
-//renderNode = connect(() => {}, mapDispatchToProps)(renderNode);
+function rnState(state, ownprops) {
+  return ownprops;
+}
 
 export function renderDoc(doc) {
   return (
