@@ -45,14 +45,24 @@ export function orgAction(state=defaultState, action) {
 /***** Components *****/
 
 function Node({ node }) {
-  
+  return (<View>
+    <NodeContent node={node}/>
+          <View style={styles.children}>
+           <Children node={node}/>
+           </View>
+          </View>);
+  }
+
+function NodeContent({ node }) {
+  return (
+    <TouchableHighlight >
+    <Text>
+    {node.content}
+    </Text>
+  </TouchableHighlight>)
 }
 
 function Children({ node }) {
-  
-}
-
-function RenderChildren({ node, key }) {
   const nodes = [];
   node = Org.getChild(node, 0);
   let i = 0;
@@ -63,33 +73,9 @@ function RenderChildren({ node, key }) {
   }
   return (<View>
           {
-            nodes.map(({node, i}) => (<RenderNode node={node} key={i} />))
+            nodes.map(({node, key}) => (<Node node={node} key={key} />))
           }
           </View>);
-}
-
-function RenderNode({ node, key }) {
-   let children = null;
-   if (Org.numChildren(node) > 0) {
-     if (Org.getMeta(node, 'hidden') !== true) {
-       children =
-         (<View style={styles.children} key={key}>
-          <RenderChildren node={node} key={key}/>
-       </View>);
-     } else {
-       children = (<Text>...</Text>);
-     }
-   }
-  return (
-    <View key={key}>
-      <TouchableHighlight >
-        <Text>
-          {node.content}
-        </Text>
-      </TouchableHighlight>
-      {children}
-    </View>
-  );
 }
 
 //RenderNode = connect(mapStateToProps)(RenderNode);
@@ -103,11 +89,11 @@ function rnState(state, ownprops) {
   return ownprops;
 }
 
-function renderDocNode({ doc }) {
+function DocNodeRender({ doc }) {
   return (
-      <View style={styles.tree}>
+    <View style={styles.tree}>
       <Text>Test</Text>
-      <RenderChildren node={doc} />
+      <Node node={doc} />
     </View>
   );
 }
@@ -118,7 +104,7 @@ function mapStateToProps(state) {
   };
 }
 
-export let renderDoc = connect(mapStateToProps)(renderDocNode);
+export let DocNode = connect(mapStateToProps)(DocNodeRender);
 
 const styles = {
   tree: {

@@ -28,7 +28,7 @@ function OrgSquared() {
         title="org_squared"
         scrollEnabled={true}
         style={styles.container}>
-        <OrgView.renderDoc />
+        <OrgView.DocNode />
       </ExScreen>
     </Provider>
   );
