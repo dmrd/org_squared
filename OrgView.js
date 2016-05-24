@@ -1,5 +1,5 @@
 import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux'
+import { bindActionCreators } from 'redux';
 
 let Org = require('./org/org');
 let Parser = require('./org/org_parser');
@@ -24,7 +24,7 @@ function toggleVisibility (node) {
 
 const defaultState = {
   doc: Parser.parse(
-    "* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1\n* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1\n* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1\n* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1"
+    "* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1\n* A\nsection A\n** A.A\n** A.B\n*** A.B.A\n*** A.B.B\n** A.C\n* B\n** B.A"
   )
 };
 
@@ -33,37 +33,66 @@ const defaultState = {
 export function orgAction(state=defaultState, action) {
   switch (action.type) {
     case TOGGLE_VISIBILITY:
-      let current = Org.getMeta(node, 'hidden');
-      let updated = Org.setMeta(node, 'hidden', !current);
-      return Org.getDoc(updated);
+      let current = isHidden(action.node)
+      let updated = Org.setMeta(action.node, 'hidden', !current);
+      return { doc: Org.getDoc(updated) };
     default:
       return state;
   }
 }
 
+/***** Org helpers *****/
+
+function isHidden(node) {
+  return !!Org.getMeta(node, 'hidden');
+}
 
 /***** Components *****/
 
 function Node({ node }) {
   return (<View>
-    <NodeContent node={node}/>
-          <View style={styles.children}>
-           <Children node={node}/>
-           </View>
-          </View>);
+    <View style={styles.item}>
+      <CollapseNodeButton node={node}/>
+      <NodeContent node={node}/>
+    </View>
+    <View style={styles.children}>
+    <Children node={node}/>
+    </View>
+  </View>);
+}
+
+function NodeButton({ node, onPress }) {
+  let text = '-';
+  if (isHidden(node)) {
+    text = '+';
   }
+  return (
+    <TouchableHighlight onPress={() => onPress(node)}>
+      <Text>{text} </Text>
+    </TouchableHighlight>);
+}
+
+
+let CollapseNodeButton = connect(() => ({}),
+                                 (dispatch) => ({ onPress: (node) => dispatch(toggleVisibility(node)) }))(NodeButton);
 
 function NodeContent({ node }) {
   return (
-    <TouchableHighlight >
     <Text>
-    {node.content}
-    </Text>
-  </TouchableHighlight>)
+      {node.content}
+    </Text>);
+}
+
+function HiddenContent() {
+  return <View/>;
 }
 
 function Children({ node }) {
-  const nodes = [];
+  if (isHidden(node)) {
+    return <HiddenContent/>
+  }
+
+  let nodes = [];
   node = Org.getChild(node, 0);
   let i = 0;
   while (node !== undefined) {
@@ -72,27 +101,15 @@ function Children({ node }) {
     i += 1;
   }
   return (<View>
-          {
-            nodes.map(({node, key}) => (<Node node={node} key={key} />))
-          }
-          </View>);
-}
-
-//RenderNode = connect(mapStateToProps)(RenderNode);
-
-
-function rnDispatch(dispatch) {
-  return { onPress: (node) => dispatch(toggleVisibility(node)) };
-}
-
-function rnState(state, ownprops) {
-  return ownprops;
+      {
+        nodes.map(({node, key}) => (<Node node={node} key={key} />))
+      }
+  </View>);
 }
 
 function DocNodeRender({ doc }) {
   return (
     <View style={styles.tree}>
-      <Text>Test</Text>
       <Node node={doc} />
     </View>
   );
