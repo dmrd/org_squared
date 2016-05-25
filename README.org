@@ -1,0 +1,66 @@
+* Org^2
+
+Org-mode mobile client in React Native + Exponent, i.e. the ultimate productivity app for people who want to customize everything.
+
+The goal is to provide a library for interacting with Org files along with a modular and extensible design for implementing different views into an Org tree.  Different views make sense for TODOs versus note-taking versus time tracking, and it is possible to create many different tools built on the same simple, extensible, and forever open format: plain-text org mode files!
+
+At the moment, Org^2 is only tested on Android.
+
+* Organization
+
+Functions for interacting with org files are in the `org` directory.  This is primarily a parser written in pegjs, along with the data structure and utility functions.  It is implemented in immutablejs.
+
+* Roadmap
+
+This is a collection of planned and potential features.  The long term goal for the parser is to support every feature [[http://orgmode.org/worg/dev/org-syntax.html][of the Org Mode grammar]].  Once features are implemented in the backend Org library, it will be much easier to implement different applications in react.
+
++ Basic org features
+  + [ ] Priorities
+  + [ ] Tags
+  + TODO keywords
+    + [ ] TODO/DONE
+    + [ ] Custom keywords
+      + [ ] Global
+      + [ ] Per file
+  + Scheduling
+    + [ ] scheduled
+    + [ ] deadline
+  + [ ] Time tracking
+  + [ ] Linking
+  + [ ] Property drawers
+    + e.g. effort
++ [ ] Export
+  + Export back to .org file
+    + Expect this to normalize org files, so export might not exactly match input if input doesn't match standard org format.
++ [ ] Capture
++ Outline UI
+  + [X] Folding
+  + [ ] Reorganize subtrees
+  + [ ] Edit headings inline
+  + [ ] Single headline view
+    + Edit body
+    + Edit properties
+  + [ ] Icons
+  + [ ] Support Linking
++ Search
+  + [ ] Grammar for searching
+  + [ ] Saved searches
++ [ ] Syncing
+  + [ ] Conflict resolution
+    + Operational transformation?
+    + Provide diff view
+  + [ ] Dropbox
+    + requires writing react-native dropbox library
+  + [ ] Git
++ Section content
+  + Does not currently parse headline bodies
+  + [ ] Plain lists
+    + Check lists
+  + [ ] Tables
++ Someday
+  + Latex support?
++ Applications
+  + Time tracking
+  + Note taking
+    + Org attach support
+      + allows features such as inline drawing
