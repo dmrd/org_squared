@@ -65,15 +65,15 @@ export function sectionNode(content) {
 /***** Node info *****/
 
 export function isDoc(node) {
-  return node.type === TYPES.document;
+  return node.get('type') === TYPES.document;
 }
 
 export function isHeadline(node) {
-  return node.type === TYPES.headline;
+  return node.get('type') === TYPES.headline;
 }
 
 export function isSection(node) {
-  return node.type === TYPES.section;
+  return node.get('type') === TYPES.section;
 }
 
 export function level(node) {
@@ -88,12 +88,16 @@ export function level(node) {
   return node.meta.get('level');
 }
 
+export function getContent(cursor) {
+  return cursor.get('content');
+}
+
 export function getMeta(cursor, property) {
   return cursor.getIn(['meta', property]);
 }
 
 export function numChildren(cursor) {
-  return cursor.children.size;
+  return cursor.get('children').size;
 }
 
 
@@ -109,7 +113,7 @@ export function getPath(cursor) {
 /*
  Create a cursor into `doc` with `path`
  */
-function createCursor(doc, path = []) {
+export function createCursor(doc, path = []) {
   return Cursor.from(doc, path, () => {});
 }
 
@@ -134,7 +138,7 @@ export function getParent(cursor) {
 }
 
 export function getChild(cursor, i) {
-  return cursor.children.get(i);
+  return cursor.getIn(['children', i]);
 }
 
 export function nextSibling(cursor) {

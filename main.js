@@ -19,13 +19,14 @@ function OrgSquared() {
     doc: OrgView.orgAction,
     focus: OrgView.focus
   }));
+
   return (
     <Provider store={store}>
       <ExScreen
         title="org_squared"
         scrollEnabled={true}
         style={styles.container}>
-        <OrgView.RootNode />
+        <OrgView.EntryView />
       </ExScreen>
     </Provider>
   );
