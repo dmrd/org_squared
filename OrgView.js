@@ -86,7 +86,11 @@ function isHidden(node) {
 function Node({ node }) {
   let nodeContent;
   if (!!Org.getMeta(node, 'focused')) {
-    nodeContent = <EditNodeContent node={node}/>
+    let multiline = false;
+    if (Org.isSection(node)) {
+      multiline = true;
+    }
+    nodeContent = <EditNodeContent node={node} multiline={multiline}/>
   } else {
     nodeContent = <NodeContent node={node}/>
   }
@@ -137,15 +141,13 @@ NodeContent = connect(() => ({}),
                       (dispatch) => ({ onPress: (node) =>
                       dispatch(setProperty(node, ['meta', 'focused'], true))}))(NodeContent);
 
-function EditNodeContent({ node, onChangeText, onEndEditing }) {
+function EditNodeContent({ node, onChangeText, onEndEditing, multiline=false }) {
   return <TextInput
-           multiline={false}
+           multiline={multiline}
            onChangeText={(text) => onChangeText(node, text)} value={node.content} onEndEditing={() => onEndEditing(node)}
            autoFocus={true}
            style={[styles.flex]}/>;
 }
-
-
 
 EditNodeContent = connect(() => ({}),
                           (dispatch) => ({

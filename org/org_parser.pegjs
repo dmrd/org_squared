@@ -27,7 +27,7 @@ headline = stars:'*'+ ' '* line:line? body:(section)? {
 }
 
 sectionline = !'*' line:line { return line; }
-section = content:(sectionline)+ { return org.sectionNode(content); }
+section = content:(sectionline)+ { return org.sectionNode(content.join('\n')); }
 
 
 // Basic parts
