@@ -68,6 +68,10 @@ export function isHeadline(node) {
   return node.type === TYPES.headline;
 }
 
+export function isSection(node) {
+  return node.type === TYPES.section;
+}
+
 export function level(node) {
   if (isDoc(node)) {
     return 0;
@@ -169,6 +173,10 @@ export function next(cursor) {
 
 export function setMeta(cursor, property, value) {
   return cursor.get('meta').set(property, value)
+}
+
+export function setContent(cursor, content) {
+  return cursor.set('content', content)
 }
 
 export function addChild(cursor, newNode) {

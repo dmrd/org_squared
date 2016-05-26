@@ -6,6 +6,7 @@ let Parser = require('./org/org_parser');
 
 let {
   Text,
+  TextInput,
   TouchableHighlight,
   View
 } = React;
@@ -14,10 +15,29 @@ let {
 /***** Actions *****/
 
 const TOGGLE_VISIBILITY = 'TOGGLE_VISIBLE'; // type + node
+const SET_PROPERTY = 'SET_FOCUSED_PROPERTY'; // [field, path] + value
 
-function toggleVisibility (node) {
+const SET_FOCUS = 'SET_FOCUS';
+
+function toggleVisibility(node) {
   return {
     type: TOGGLE_VISIBILITY,
+    node
+  };
+}
+
+function setProperty(node, path, value) {
+  return {
+    type: SET_PROPERTY,
+    node,
+    path,
+    value
+  };
+}
+
+function setFocus(node) {
+  return {
+    type: SET_FOCUS,
     node
   };
 }
@@ -31,16 +51,28 @@ function createTestDoc() {
 }
 
 export function orgAction(state=createTestDoc(), action) {
+  let updated;
   switch (action.type) {
     case TOGGLE_VISIBILITY:
       let current = isHidden(action.node)
-      let updated = Org.setMeta(action.node, 'hidden', !current);
+      updated = Org.setMeta(action.node, 'hidden', !current);
+      return Org.getDoc(updated);
+    case SET_PROPERTY:
+      updated = action.node.setIn(action.path, action.value);
       return Org.getDoc(updated);
     default:
       return state;
   }
 }
 
+export function focus(state=null, action) {
+  switch (action.type) {
+    case SET_FOCUS:
+      return action.node;
+    default:
+      return state;
+  }
+}
 
 /***** Org helpers *****/
 
@@ -52,25 +84,40 @@ function isHidden(node) {
 /***** Components *****/
 
 function Node({ node }) {
-  return (<View>
-    <View style={styles.item}>
-      <CollapseNodeButton node={node}/>
-      <NodeContent node={node}/>
-    </View>
-    <View style={styles.children}>
-      <Children node={node}/>
-    </View>
-  </View>);
+  let nodeContent;
+  if (!!Org.getMeta(node, 'focused')) {
+    nodeContent = <EditNodeContent node={node}/>
+  } else {
+    nodeContent = <NodeContent node={node}/>
+  }
+
+  let nodeButton;
+  if (Org.isSection(node)) {
+    nodeButton = null;
+  } else {
+    nodeButton = <CollapseNodeButton node={node}/>;
+  }
+
+  return (
+    <View>
+      <View style={{flexDirection: 'row'}}>
+        {nodeButton}
+        {nodeContent}
+      </View>
+      <View style={styles.children}>
+        <Children node={node}/>
+      </View>
+    </View>);
 }
 
 function NodeButton({ node, onPress }) {
   if (Org.numChildren(node) == 0) {
-    return <Text>* </Text>
+    return <Text> *  </Text>
   }
 
-  let text = '-';
+  let text = ' -  ';
   if (isHidden(node)) {
-    text = '+';
+    text = ' +  ';
   }
   return (
     <TouchableHighlight onPress={() => onPress(node)}>
@@ -82,9 +129,31 @@ function NodeButton({ node, onPress }) {
 let CollapseNodeButton = connect(() => ({}),
                                  (dispatch) => ({ onPress: (node) => dispatch(toggleVisibility(node)) }))(NodeButton);
 
-function NodeContent({ node }) {
-  return (<Text> {node.content} </Text>);
+function NodeContent({ node, onPress }) {
+  return (<Text onPress={() => onPress(node)}> {node.content} </Text>);
 }
+
+NodeContent = connect(() => ({}),
+                      (dispatch) => ({ onPress: (node) =>
+                      dispatch(setProperty(node, ['meta', 'focused'], true))}))(NodeContent);
+
+function EditNodeContent({ node, onChangeText, onEndEditing }) {
+  return <TextInput
+           multiline={false}
+           onChangeText={(text) => onChangeText(node, text)} value={node.content} onEndEditing={() => onEndEditing(node)}
+           autoFocus={true}
+           style={[styles.flex]}/>;
+}
+
+
+
+EditNodeContent = connect(() => ({}),
+                          (dispatch) => ({
+                            onChangeText: (node, text) =>
+                              dispatch(setProperty(node, ['content'], text)),
+                            onEndEditing: (node) => dispatch(setProperty(node, ['meta', 'focused'], false)),
+                            onSubmitEditing: (node) => dispatch(setProperty(node, ['meta', 'focused'], false))
+                          }))(EditNodeContent);
 
 function HiddenContent() {
   return <View/>;
@@ -110,24 +179,30 @@ function Children({ node }) {
   </View>);
 }
 
-function DocNodeRender({ doc }) {
+function RootNodeRender({ node }) {
   return (
     <View style={styles.tree}>
-      <Children node={doc} />
+      <Children node={node} />
     </View>
   );
 }
 
-export let DocNode = connect((state) => ({ doc: state.doc }))(DocNodeRender);
+export let RootNode = connect((state) => ({ node: state.doc }))(RootNodeRender);
 
 const styles = {
   tree: {
     padding: 10
   },
-  item: {
+  row: {
     flexDirection: 'row'
+  },
+  col: {
+    flexDirection: 'column'
   },
   children: {
     paddingLeft: 20
+  },
+  flex: {
+    flex: 1
   }
 };

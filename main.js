@@ -16,7 +16,8 @@ let OrgView = require('./OrgView');
 
 function OrgSquared() {
   const store = createStore(combineReducers({
-    doc: OrgView.orgAction
+    doc: OrgView.orgAction,
+    focus: OrgView.focus
   }));
   return (
     <Provider store={store}>
@@ -24,7 +25,7 @@ function OrgSquared() {
         title="org_squared"
         scrollEnabled={true}
         style={styles.container}>
-        <OrgView.DocNode />
+        <OrgView.RootNode />
       </ExScreen>
     </Provider>
   );
