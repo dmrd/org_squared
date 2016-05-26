@@ -6,7 +6,8 @@ import {
   List,
   OrderedMap,
   Map,
-  Record
+  Record,
+  Set
 } from 'immutable';
 let Cursor = require('immutable/contrib/cursor');
 
@@ -39,11 +40,14 @@ export function createDoc() {
   }));
 }
 
-export function headlineNode(level, content, children = []) {
+export function headlineNode(level, content, children=[], {keyword=null, tags=[], priority=null}={}) {
   return Node({
     type: TYPES.headline,
     meta: Map({
-      level: level
+      level,
+      keyword: keyword,
+      tags: Set(tags),
+      priority
     }),
     children: List(children),
     content: content

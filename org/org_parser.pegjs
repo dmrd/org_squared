@@ -21,14 +21,29 @@ document = section:section? headlines:headline* {
   return org.getDoc(cursor);
 }
 
-headline = stars:'*'+ ' '* line:line? body:(section)? {
+headline = stars:'*'+ ' '* keyword:keyword? ' '* priority:priority? ' '* line:line? body:section? {
   let children = !!body ? [body] : []
-  return org.headlineNode(stars.length, line, children);
+
+  // No backtracking in pegjs, so easier to do this way (also avoiding regex):
+  let re = /(.*?)( :([0-9a-zA-Z_@#%:]*):)?$/;
+  let result = re.exec(line);
+  let headline_content= result[1];
+  let tag_string = result[3];
+  let tags;
+  if (!!tag_string) {
+    tags = result[3].split(':')
+  }
+  return org.headlineNode(stars.length, headline_content, children,
+                          {keyword: keyword,
+                           tags: tags,
+                           priority: priority});
 }
 
 sectionline = !'*' line:line { return line; }
 section = content:(sectionline)+ { return org.sectionNode(content.join('\n')); }
 
+keyword = 'TODO' / 'DONE'
+priority = '[#' priority:upperletter ']' { return priority; }
 
 // Basic parts
 

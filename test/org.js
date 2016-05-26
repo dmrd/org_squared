@@ -4,7 +4,8 @@ import {
   expect
 } from 'chai';
 import {
-  List
+  List,
+  Set
 } from 'immutable';
 
 // Helper function for debugging
@@ -94,5 +95,13 @@ describe('parser', () => {
         doc.children
       );
     });
+  });
+  it.only('headline tags, priority, and keywords parse', () => {
+    let doc = parser.parse("* TODO [#A] 1 :tag:tag2:");
+    let headline = doc.children.get(0);
+    org.pprint(headline);
+    expect(org.getMeta(headline, 'priority')).to.equal('A');
+    expect(org.getMeta(headline, 'keyword')).to.equal('TODO');
+    expect(org.getMeta(headline, 'tags').deref()).to.equal(Set(['tag', 'tag2']));
   });
 });
