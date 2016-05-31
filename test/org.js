@@ -1,12 +1,13 @@
-let org = require('../org/org');
+let Org = require('../org/org');
 let parser = require('../org/org_parser');
 import {
   expect
 } from 'chai';
-import {
+let Immutable = require('immutable');
+let {
   List,
   Set
-} from 'immutable';
+} = Immutable;
 
 // Helper function for debugging
 function pprint(object) {
@@ -39,12 +40,12 @@ function checkStructure(expected, actual) {
 describe('utils', () => {
 
   it('node level', () => {
-    let l1 = org.headlineNode(1, "1");
-    expect(org.level(org.headlineNode(1, "1"))).to.equal(1);
-    expect(org.level(org.headlineNode(100, "100"))).to.equal(100);
+    let l1 = Org.headlineNode(1, "1");
+    expect(Org.level(Org.headlineNode(1, "1"))).to.equal(1);
+    expect(Org.level(Org.headlineNode(100, "100"))).to.equal(100);
 
-    expect(org.level(org.createDoc())).to.equal(0);
-    expect(org.level(org.sectionNode("it has stuff"))).to.equal(Infinity);
+    expect(Org.level(Org.createDoc())).to.equal(0);
+    expect(Org.level(Org.sectionNode("it has stuff"))).to.equal(Infinity);
   });
 
   it('iterates in order', () => {
@@ -53,7 +54,7 @@ describe('utils', () => {
     let traversed = [];
     while (doc != undefined) {
       traversed.push(doc.content);
-      doc = org.next(doc);
+      doc = Org.next(doc);
     }
     expect(traversed).to.deep.equal(order);
   });
@@ -62,29 +63,28 @@ describe('utils', () => {
 describe('inserting', () => {
   describe('header', () => {
     it('at root', () => {
-      let h1 = org.headlineNode(1, 1);
-      let h2 = org.headlineNode(2, 2);
-      let h3 = org.headlineNode(1, 3);
-      let h1_c = org.insertHeadline(org.createDoc(), h1);
-      let h2_c = org.insertHeadline(h1_c, h2);
-      let h3_c = org.insertHeadline(h2_c, h3);
-      let h = org.TYPES.headline;
+      let h1 = Org.headlineNode(1, 1);
+      let h2 = Org.headlineNode(2, 2);
+      let h3 = Org.headlineNode(1, 3);
+      let h1_c = Org.insertHeadline(Org.createDoc(), h1);
+      let h2_c = Org.insertHeadline(h1_c, h2);
+      let h3_c = Org.insertHeadline(h2_c, h3);
+      let h = Org.TYPES.headline;
       checkStructure(
         [node(h, 1, [
             node(h, 2)
           ]),
           node(h, 3)
         ],
-        org.getDoc(h3_c).children
+        Org.getDoc(h3_c).children
       );
     });
   });
 });
 
 describe('parser', () => {
-  describe('simple', () => {
     it('can parse just headlines', () => {
-      let h = org.TYPES.headline;
+      let h = Org.TYPES.headline;
       let doc = parser.parse("** 1\n***2\n*3\n");
       checkStructure(
         [node(h, '1', [
@@ -95,13 +95,51 @@ describe('parser', () => {
         doc.children
       );
     });
-  });
   it('headline tags, priority, and keywords parse', () => {
     let doc = parser.parse("* TODO [#A] 1 :tag:tag2:");
     let headline = doc.children.get(0);
-    org.pprint(headline);
-    expect(org.getMeta(headline, 'priority')).to.equal('A');
-    expect(org.getMeta(headline, 'keyword')).to.equal('TODO');
-    expect(org.getMeta(headline, 'tags').deref()).to.equal(Set(['tag', 'tag2']));
+    expect(Org.getMeta(headline, 'priority')).to.equal('A');
+    expect(Org.getMeta(headline, 'keyword')).to.equal('TODO');
+    expect(Org.getMeta(headline, 'tags').deref()).to.equal(Set(['tag', 'tag2']));
+  });
+
+  describe('timestamps', () => {
+    // TODO: Generate parser that can start from ts and test timestamps individually
+    it('parses scheduled and deadline', () => {
+      let doc = parser.parse("* test\nSCHEDULED: <2016-06-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n");
+      expect(doc.getIn(['children', 0, 'meta', 'planning']).deref()).to.equal(Immutable.fromJS(
+        [
+          {
+            "type": "SCHEDULED",
+            "timestamp": {
+              "active": true,
+              "year": "2016",
+              "month": "06",
+              "day": "01",
+              "hour": null,
+              "minute": null,
+              "dayname": "Wed",
+              "repeater": {
+                "mark": "+",
+                "value": "1",
+                "unit": "w"
+              }
+            }
+          },
+          {
+            "type": "DEADLINE",
+            "timestamp": {
+              "active": true,
+              "year": "2016",
+              "month": "06",
+              "day": "02",
+              "hour": "8",
+              "minute": "00",
+              "dayname": "Thu",
+              "repeater": null
+            }
+          }
+        ]));
+    });
   });
 });

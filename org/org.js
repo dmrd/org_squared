@@ -32,6 +32,23 @@ export const Node = Record({
 });
 
 
+export const Repeater = Record({
+  mark: null,
+  value: null,
+  unit: null
+})
+
+export const Timestamp = Record({
+  active: false,
+  year: null,
+  month: null,
+  day: null,
+  hour: null,
+  minute: null,
+  dayname: null,
+  repeater: null
+});
+
 /***** Creating nodes *****/
 
 export function createDoc() {
@@ -40,14 +57,15 @@ export function createDoc() {
   }));
 }
 
-export function headlineNode(level, content, children=[], {keyword=null, tags=[], priority=null}={}) {
+export function headlineNode(level, content, children=[], {keyword=null, tags=[], priority=null, ...other}={}) {
   return Node({
     type: TYPES.headline,
     meta: Map({
       level,
       keyword: keyword,
       tags: Set(tags),
-      priority
+      priority,
+      ...other
     }),
     children: List(children),
     content: content
@@ -213,7 +231,7 @@ export function insertHeadline(cursor, headline) {
 
 /***** Export *****/
 
-/* 
+/*
  * Export node as text
  */
 export function text(cursor, recursive = false) {
