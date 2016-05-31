@@ -5,6 +5,7 @@ let Org = require('./org/org');
 let Parser = require('./org/org_parser');
 
 let {
+  Picker,
   Text,
   TextInput,
   TouchableHighlight,
@@ -95,7 +96,16 @@ function isHidden(node) {
 }
 
 function tagsAsText(node) {
-  return Org.getMeta(node, 'tags')
+  return Array.from(Org.getMeta(node, 'tags').keys()).join(' ')
+}
+
+function tagsFromText(text) {
+  let tags = text.split('');
+  return tags.filter(x => x.length > 0);
+}
+
+function getKeyword(node) {
+  return Org.getMeta(node, 'keyword');
 }
 
 /**********************/
@@ -106,11 +116,7 @@ let noop = () => {}
 
 /*** Editable Fields ***/
 
-function EditNodePath({ node, path,
-                        onChangeText=noop,
-                        onEndEditing=noop,
-                        onSubmitEditing=noop,
-                        multiline=false, style=[] }) {
+function EditNodePath({ node, path, onChangeText=noop, onEndEditing=noop, onSubmitEditing=noop, multiline=false, style=[] }) {
   return (
     <TextInput
       multiline={multiline}
@@ -124,38 +130,40 @@ function EditNodePath({ node, path,
 }
 
 EditNodePath = connect(() => ({}),
-                          (dispatch) => ({
-                            onChangeText: (node, path, text) =>
-                              dispatch(setProperty(node, path, text)),
-                          }))(EditNodePath);
+                       (dispatch) => ({
+                         onChangeText: (node, path, text) =>
+                           dispatch(setProperty(node, path, text)),
+                       }))(EditNodePath);
 
 let EditNodeContent = connect(() => ({}),
-                          (dispatch) => ({
-                            onChangeText: (node, path, text) =>
-                              dispatch(setProperty(node, path, text)),
-                            onEndEditing: (node) => dispatch(setProperty(node, ['meta', 'editing'], false)),
-                            onSubmitEditing: (node) => dispatch(setProperty(node, ['meta', 'editing'], false))
-                          }))(EditNodePath);
+                              (dispatch) => ({
+                                onChangeText: (node, path, text) =>
+                                  dispatch(setProperty(node, path, text)),
+                                onEndEditing: (node) => dispatch(setProperty(node, ['meta', 'editing'], false)),
+                                onSubmitEditing: (node) => dispatch(setProperty(node, ['meta', 'editing'], false))
+                              }))(EditNodePath);
 
+
+/*** Fields ***/
 function NodePath({ node, path, onPress, onLongPress }) {
   return (
     <TouchableWithoutFeedback 
       onLongPress={() => onLongPress(node)}>
-    <Text
-      onPress={() => onPress(node)}
-    style={styles.flex}>
-      {node.getIn(path)}
-    </Text>
+      <Text
+        onPress={() => onPress(node)}
+        style={styles.flex}>
+        {node.getIn(path)}
+      </Text>
     </TouchableWithoutFeedback>
 
   );
 }
 
 NodePath = connect(() => ({}),
-                      (dispatch) => ({
-                        onPress: (node) => dispatch(setProperty(node, ['meta', 'editing'], true)),
-                        onLongPress: (node) => dispatch(setFocus(node))
-                      }))(NodePath);
+                   (dispatch) => ({
+                     onPress: (node) => dispatch(setProperty(node, ['meta', 'editing'], true)),
+                     onLongPress: (node) => dispatch(setFocus(node))
+                   }))(NodePath);
 
 function Node({ node }) {
   let multiline = Org.isSection(node);
@@ -179,6 +187,70 @@ function Node({ node }) {
     </View>);
 }
 
+function TODO() {
+  return (
+    <Text style={{color: 'red'}}>
+      TODO
+    </Text>)
+}
+
+function DONE() {
+  return (
+    <Text style={{color: 'green'}}>
+      DONE
+    </Text>
+  )
+}
+
+function Keyword({ keyword }) {
+  if (keyword === 'TODO') {
+    return <TODO/>
+  } else if (keyword === 'DONE') {
+    return <DONE/>
+  } else {
+    return <Text style={{color: 'blue'}}> TEST </Text>;
+  }
+}
+
+function PropertyDropdown(property, values) {
+  let options = [];
+  let key = 0
+  for (let [label, value] of Object.entries(values)) {
+    options.push(<Picker.Item label={label} value={value} key={key}/>);
+    key += 1;
+  }
+  let dropdown = ( {node, onValueChange} ) => {
+    return (<Picker
+              selectedValue={Org.getMeta(node, property)}
+              onValueChange={(value) => onValueChange(node, value)}
+              style={styles.flex}>
+      {options}
+    </Picker>)
+  }
+  return connect(() => ({}),
+                 (dispatch) => ({
+                   onValueChange: (node, value) => dispatch(setProperty(node, ['meta', property], value))
+                 }))(dropdown);
+}
+
+let KeywordDropdown = PropertyDropdown('keyword',
+                                       {
+                                         '-': '-',
+                                         'TODO': 'TODO',
+                                         'DONE': 'DONE'
+                                       });
+
+let PriorityDropdown = PropertyDropdown('priority',
+                                        {
+                                          '-': '-',
+                                          '#A': 'A',
+                                          '#B': 'B',
+                                          '#C': 'C'
+                                        });
+
+
+/*** outline view ***/
+
 function NodeButton({ node, onPress }) {
   if (Org.numChildren(node) == 0) {
     return <Text> *  </Text>
@@ -194,21 +266,8 @@ function NodeButton({ node, onPress }) {
     </TouchableHighlight>);
 }
 
-
 let CollapseNodeButton = connect(() => ({}),
                                  (dispatch) => ({ onPress: (node) => dispatch(toggleVisibility(node)) }))(NodeButton);
-
-function BackButton({ onPress }) {
-  return (
-    <TouchableHighlight onPress={onPress}>
-      <Text>{'<<<<'}</Text>
-    </TouchableHighlight>);
-}
-
-let UnfocusButton = connect(() => ({}),
-                            (dispatch) => ({
-                              onPress: () => dispatch(clearFocus())
-                            }))(BackButton);
 
 function HiddenContent() {
   return <View/>;
@@ -228,9 +287,9 @@ function Children({ node }) {
     i += 1;
   }
   return (<View>
-    {
-      nodes.map(({node, key}) => (<Node node={node} key={key} />))
-    }
+      {
+        nodes.map(({node, key}) => (<Node node={node} key={key} />))
+      }
   </View>);
 }
 
@@ -242,10 +301,27 @@ function RootNodeRender({ node }) {
   );
 }
 
+let RootNode = connect((state) => ({ node: state.doc }))(RootNodeRender);
+
+
+/*** Edit node view ***/
+
+function BackButton({ onPress }) {
+  return (
+    <TouchableHighlight onPress={onPress}>
+      <Text>{'<<<<'}</Text>
+    </TouchableHighlight>);
+}
+
+let UnfocusButton = connect(() => ({}),
+                            (dispatch) => ({
+                              onPress: () => dispatch(clearFocus())
+                            }))(BackButton);
+
 function EditNode({ node }) {
   let child = Org.getChild(node, 0);
   if (!!child && Org.isSection(child)) {
-    child = <EditNodePath node={child} path={['content']}/>
+    child = <EditNodePath node={child} path={['content']} multiline={true}/>
   } else {
     child = <View/>
   }
@@ -253,15 +329,22 @@ function EditNode({ node }) {
     <View>
       <UnfocusButton/>
       <EditNodePath node={node} path={['content']} />
-      <Text> Priority: {Org.getMeta(node, 'priority')} </Text>
-      <Text> Keyword: {Org.getMeta(node, 'keyword')} </Text>
-      <Text> {Array.from(Org.getMeta(node, 'tags')).join(' ')} </Text>
+      <View style={styles.row}>
+        <Text> Priority: </Text>
+        <PriorityDropdown node={node} />
+      </View>
+      <View style={styles.row}>
+        <Text> Keyword: </Text>
+        <KeywordDropdown node={node} />
+      </View>
+      <Text> {tagsAsText(node)} </Text>
       {child}
     </View>
   )
 }
 
-let RootNode = connect((state) => ({ node: state.doc }))(RootNodeRender);
+
+/*** Entry point ***/
 
 function EntryViewRender({ state }) {
   if (state.focus === null) {

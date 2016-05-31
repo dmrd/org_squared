@@ -183,6 +183,10 @@ export function setMeta(cursor, property, value) {
   return cursor.get('meta').set(property, value)
 }
 
+export function setTags(cursor, tags) {
+  return setMeta(cursor, 'tags', Set(tags))
+}
+
 export function setContent(cursor, content) {
   return cursor.set('content', content)
 }

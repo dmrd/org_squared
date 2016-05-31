@@ -96,7 +96,7 @@ describe('parser', () => {
       );
     });
   });
-  it.only('headline tags, priority, and keywords parse', () => {
+  it('headline tags, priority, and keywords parse', () => {
     let doc = parser.parse("* TODO [#A] 1 :tag:tag2:");
     let headline = doc.children.get(0);
     org.pprint(headline);
