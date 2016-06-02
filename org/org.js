@@ -49,6 +49,34 @@ export const Timestamp = Record({
   repeater: null
 });
 
+function todayTs(ts) {
+  return (ts.year !== null && ts.month !== null && ts.day !== null);
+}
+
+function tsDateSet(ts) {
+  return (ts.year !== null && ts.month !== null && ts.day !== null);
+}
+
+function tsTimeSet(ts) {
+  return (ts.hour !== null && ts.minute !== null);
+}
+
+
+export function tsFromDate(date) {
+  return new Timestamp({year: date.getFullYear(),
+                        month: date.getMonth() + 1,
+                        day: date.getDate(),
+                        hour: date.getHours(),
+                        minute: date.getMinutes()
+                       });
+}
+
+function nowTs() {
+  return tsFromDate(new Date());
+}
+
+
+
 /***** Creating nodes *****/
 
 export function createDoc() {
@@ -83,15 +111,15 @@ export function sectionNode(content) {
 /***** Node info *****/
 
 export function isDoc(node) {
-  return node.get('type') === TYPES.document;
+  return !!node && node.get('type') === TYPES.document;
 }
 
 export function isHeadline(node) {
-  return node.get('type') === TYPES.headline;
+  return !!node && node.get('type') === TYPES.headline;
 }
 
 export function isSection(node) {
-  return node.get('type') === TYPES.section;
+  return !!node && node.get('type') === TYPES.section;
 }
 
 export function level(node) {
@@ -150,6 +178,9 @@ export function getDoc(cursor) {
  */
 export function getParent(cursor) {
   let path = getPath(cursor);
+  if (path.length == 0) {
+    return undefined;
+  }
   // -2 so that ['children', 1] -> []
   let newPath = path.slice(0, path.length - 2);
   return getDoc(cursor).getIn(newPath);
@@ -161,13 +192,13 @@ export function getChild(cursor, i) {
 
 export function nextSibling(cursor) {
   let path = getPath(cursor);
-  if (path.size == 0) {
+  if (path.length == 0) {
     // At root node
     return undefined;
   } else {
     let n = path[path.length - 1];
     if (typeof(n) !== 'number') {
-      console.log("ERROR: Last element in path is not a number", path);
+      console.warn("ERROR: Last element in path is not a number", path);
       return undefined;
     }
     n += +1;
@@ -216,7 +247,7 @@ export function addChild(cursor, newNode) {
 
 export function insertHeadline(cursor, headline) {
   if (!isHeadline(headline)) {
-    console.log("Node is not a headline");
+    console.warn("Node is not a headline");
     return cursor;
   }
   let headlineLevel = level(headline);
@@ -237,3 +268,207 @@ export function insertHeadline(cursor, headline) {
 export function text(cursor, recursive = false) {
   return cursor.content;
 }
+
+
+/***** Search *****/
+/* Search TODO:
+ * Clocking search
+ * Properly handle hours/minutes
+ * Handle optional/default operators in property.operator.value
+ */
+
+function getPlanning(type) {
+  return (cursor) => {
+    let planning = cursor.getIn(['meta', 'planning']);
+    if (planning == undefined) {
+      return undefined;
+    }
+    let entry;
+    for (entry of planning) {
+      if (entry.get('type') == type) {
+        return entry.get('timestamp');
+      }
+    }
+    return undefined;
+  };
+}
+
+let getScheduled = getPlanning('SCHEDULED');
+let getDeadline = getPlanning('DEADLINE');
+let getClosed = getPlanning('CLOSED');
+
+function getTags(cursor) { return getMeta(cursor, 'tags'); }
+function getKeyword(cursor) { return getMeta(cursor, 'keyword'); }
+function getPriority(cursor) { return getMeta(cursor, 'priority'); }
+
+function getTitle(cursor) {
+  if (!isHeadline(cursor)) {
+    return null;
+  } else {
+    return getContent();
+  }
+}
+
+function getBody(cursor) {
+  let child0 = getChild(cursor, 0);
+  if (isHeadline(cursor) && isSection(child0)) {
+    return getContent(child0);
+  } else {
+    return null;
+  }
+}
+
+/* Functions to retrieve property
+ * General types:
+ * Text (headline/ section body)
+ * Timestamps
+ * Tags
+ */
+
+let properties = {
+  title: {type: 'str', get: getTitle},
+  body:  {type: 'str', get: getBody},
+  s:     {type: 'ts', get: getScheduled},
+  d:     {type: 'ts', get: getDeadline},
+  c:     {type: 'ts', get: getClosed},
+  t:     {type: 'set', get: getTags},
+  // TODO this should probably be inverted str (A < B, but #A > #B in priority)
+  p:     {type: 'str', get: getPriority}
+};
+
+function padTs(n) { return (n < 10) ? '0' + n : n; }
+
+
+let tsOrder = ['year', 'month', 'day'];
+function tsOp(op, ts, searchTerm) {
+  if (ts == undefined) { return false; }
+  let field;
+  for (field of tsOrder) {
+    if (!op(ts[field], searchTerm[field])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+let tsOps = {
+  eq  : (ts, term) => { return tsOp((a,b) => (a === b), ts, term); },
+  neq : (ts, term) => { return tsOp((a,b) => (a !== b), ts, term); },
+  lt  : (ts, term) => { return tsOp((a,b) => (a < b), ts, term); },
+  lte : (ts, term) => { return tsOp((a,b) => (a <= b), ts, term); },
+  gt  : (ts, term) => { return tsOp((a,b) => (a > b), ts, term); },
+  gte : (ts, term) => { return tsOp((a,b) => (a >= b), ts, term); }
+};
+
+let strOps = {
+  eq  : (str, term) => { return term === str; },
+  neq : (str, term) => { return term !== str; },
+  lt  : (str, term) => { return term.indexOf(str) !== -1; },
+  lte : (str, term) => { return term.indexOf(str) !== -1; },
+  gt  : (str, term) => { return str.indexOf(term) !== -1; },
+  gte : (str, term) => { return str.indexOf(term) !== -1; }
+};
+
+function tsValue(str) {
+  let date = new Date();
+  let addDays = (n) => date.setDate(date.getDate() + n);
+  let addWeeks = (n) => addDays(7 * n);
+  let addMonths = (n) => date.setMonth(date.getMonth() + n);
+  let addYears = (n) => date.setFullYear(date.getFullYear() + n);
+
+  // Named days
+  switch (str) {
+  case 'yesterday':
+    addDays(-1);
+    return date;
+  case 'today':
+    return date;
+  case 'tomorrow':
+    addDays(1);
+    return date;
+  default:
+  }
+
+  // # offsets, e.g. 1y, 2w, -3d
+  let offsetre = /^(-?)(\d+)([dwmy])$/;
+  let r;
+  if ((r = offsetre.exec(str)) !== null) {
+    let sign = r[1];
+    let amount = r[2];
+    let unit = r[3];
+    if (sign === '-') {
+      amount = -amount;
+    }
+
+    let adders = {
+      'd': addDays,
+      'm': addMonths,
+      'y': addYears
+    };
+    adders[unit]();
+    return date;
+  }
+
+  let datere = /^(\d{4})-(\d{1,2})-(\d{1,2})$/;
+  if ((r = datere.exec(str)) !== null) {
+    return new Date(r[1], r[2] - 1, r[3]);
+  }
+
+  console.warn("Invalid timestamp value " + str);
+  return date;
+}
+
+function createFilter(str) {
+  // TODO: Make this a regex so it can handle quotes
+  let [propertyStr, operatorStr, valueStr] = str.split('.');
+
+
+  // Property 
+  let propInfo = properties[propertyStr];
+  if (propInfo === undefined) {
+    console.warn("Invalid property " + propertyStr)
+    return (() => true);
+  }
+
+  let {type, get} = propInfo;
+
+  // Op
+  let op;
+  if (type === 'str') {
+    op = strOps[operatorStr];
+  } else if (type === 'ts') {
+    op = tsOps[operatorStr];
+  }
+
+  if (op == null) {
+    console.warn("Invalid op " + operatorStr);
+    return (() => true);
+  }
+
+  // Value
+  let searchValue;
+  if (type === 'str') {
+    searchValue = valueStr;
+  } else if (type === 'ts') {
+    searchValue = tsFromDate(tsValue(valueStr));
+  }
+
+  return (node) => {
+    let propValue = get(node);
+    return op(propValue, searchValue);
+  };
+}
+
+export function search(root, searchStr) {
+  let filter = createFilter(searchStr);
+  let found = [];
+  let cur = root;
+  while (cur != undefined) {
+    if (filter(cur)) {
+      found.push(cur);
+    }
+    cur = next(cur);
+  }
+  return found;
+}
+

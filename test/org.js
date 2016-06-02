@@ -143,3 +143,15 @@ describe('parser', () => {
     });
   });
 });
+
+describe('search', () => {
+
+  describe('timestamps', () => {
+    it.only('can search by scheduled', () => {
+      let doc = parser.parse("* 1\n** 2\nSCHEDULED: <2016-06-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n* 3\nDEADLINE: <2016-07-10 Fri> SCHEDULED: <2016-07-05 Fri>");
+      let found = Org.search(doc, 's.lte.2016-06-01');
+      let contents = found.map((node) => { return Org.getContent(node); });
+      expect(contents).to.eql(['2'])
+    });
+  });
+});
