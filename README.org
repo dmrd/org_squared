@@ -15,16 +15,14 @@ Functions for interacting with org files are in the `org` directory.  This is pr
 This is a collection of planned and potential features.  The long term goal for the parser is to support every feature [[http://orgmode.org/worg/dev/org-syntax.html][of the Org Mode grammar]].  Once features are implemented in the backend Org library, it will be much easier to implement different applications in react.
 
 + Basic org features
-  + [ ] Priorities
-  + [ ] Tags
-  + TODO keywords
-    + [ ] TODO/DONE
+  + [X] Priorities
+  + [X] Tags
+  + Keywords
+    + [X] TODO/DONE
     + [ ] Custom keywords
       + [ ] Global
       + [ ] Per file
-  + Scheduling
-    + [ ] scheduled
-    + [ ] deadline
+  + [X] Scheduling (scheduled/deadline/closed)
   + [ ] Time tracking
   + [ ] Linking
   + [ ] Property drawers
@@ -36,14 +34,15 @@ This is a collection of planned and potential features.  The long term goal for 
 + Outline UI
   + [X] Folding
   + [ ] Reorganize subtrees
-  + [ ] Edit headings inline
-  + [ ] Single headline view
-    + Edit body
-    + Edit properties
+  + [X] Edit headings inline
+  + [-] Single headline view
+    + [X] Edit body
+    + [ ] Edit properties
   + [ ] Icons
   + [ ] Support Linking
 + Search
-  + [ ] Grammar for searching
+  + [X] Grammar for searching
+    + Follows Orgzly's syntax for now
   + [ ] Saved searches
 + [ ] Syncing
   + [ ] Conflict resolution
@@ -58,9 +57,13 @@ This is a collection of planned and potential features.  The long term goal for 
     + Check lists
   + [ ] Tables
 + Someday
-  + Latex support?
+  + Inlined Latex support?
 + Applications
   + Time tracking
+    + e.g. Pomodoro app + time tracking
   + Note taking
     + Org attach support
       + allows features such as inline drawing
+  + Data logging
+    + logging events/quantities/etc.
+    + Could specify a headline as a tracker with a tag
