@@ -1,7 +1,7 @@
 {
   "name": "org_squared",
   "version": "0.0.0",
-  "description": "Hello Exponent!",
+  "description": "Flexible & extensible Org mode client",
   "author": "David Dohan",
   "private": true,
   "main": "main.js",
