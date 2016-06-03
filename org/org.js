@@ -332,6 +332,7 @@ let properties = {
   d:     {type: 'ts', get: getDeadline},
   c:     {type: 'ts', get: getClosed},
   t:     {type: 'set', get: getTags},
+  k:     {type: 'str', get: getKeyword},
   // TODO this should probably be inverted str (A < B, but #A > #B in priority)
   p:     {type: 'str', get: getPriority}
 };

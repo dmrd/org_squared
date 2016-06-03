@@ -145,13 +145,24 @@ describe('parser', () => {
 });
 
 describe('search', () => {
-
+  // TODO: Test all operators
+  let doc = parser.parse("* TODO 1\n** DONE 2\nSCHEDULED: <2016-06-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n* 3\nDEADLINE: <2016-07-10 Fri> SCHEDULED: <2016-07-05 Fri>");
+  let getContents = (nodes) => nodes.map((node) => { return Org.getContent(node); });
   describe('timestamps', () => {
-    it.only('can search by scheduled', () => {
-      let doc = parser.parse("* 1\n** 2\nSCHEDULED: <2016-06-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n* 3\nDEADLINE: <2016-07-10 Fri> SCHEDULED: <2016-07-05 Fri>");
+    it('can search by scheduled', () => {
       let found = Org.search(doc, 's.lte.2016-06-01');
-      let contents = found.map((node) => { return Org.getContent(node); });
-      expect(contents).to.eql(['2'])
+      expect(getContents(found)).to.eql(['2'])
+    });
+  });
+
+  describe('keywords', () => {
+    it('DONE', () => {
+      let found = Org.search(doc, 'k.eq.DONE');
+      expect(getContents(found)).to.eql(['2'])
+    });
+    it('TODO', () => {
+      let found = Org.search(doc, 'k.eq.TODO');
+      expect(getContents(found)).to.eql(['1'])
     });
   });
 });
