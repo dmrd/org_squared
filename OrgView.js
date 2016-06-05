@@ -1,10 +1,13 @@
 import { connect } from 'react-redux';
 
 let React = require('react-native');
+let Swipeout = require('react-native-swipeout');
 let Org = require('./org/org');
 let Parser = require('./org/org_parser');
+let Moment = require('moment');
 
 let {
+  ListView,
   Picker,
   Text,
   TextInput,
@@ -56,7 +59,8 @@ function clearFocus() {
 
 function createTestDoc() {
   return Parser.parse(
-    "* DONE [#A] 1 has node content, keywords, priority, and tags :TAG1:TAG2:\nsection 1\n** TODO 1.1\n** DONE [#C] 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1\n* A\nsection A\n** A.A\n** A.B\n*** A.B.A\n*** A.B.B\n** A.C\n* B\n** B.A\n* 1\nsection 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1\n* A\nsection A\n** A.A\n** A.B\n*** A.B.A\n*** A.B.B\n** A.C\n* B\n** B.A");
+    '* DONE [#A] 1. I did this :project:\nSCHEDULED: <2016-06-05 Sun>\n:LOGBOOK:\nCLOCK: [2016-06-03 Fri 18:00]--[2016-06-03 Fri 19:30] =>  1:30\n- I did MORE of it\nCLOCK: [2016-06-02 Thu 18:00]--[2016-06-02 Thu 19:00] =>  1:00\n- I did part of it!\n:END:\n** 1.1 Look at all\n** 1.2 Of these headlines\n*** 1.2.1 Wow such hierarchy\n**** TODO 1.2.1.1 much test\n* 2. Work                                                              :work:\n** TODO [#A] 2.1 Do this or you lose your job!\nSCHEDULED: <2016-06-04 Sat> DEADLINE: <2016-06-06 Mon>\n*** 2.1.1 You should probably\n** TODO 2.2 so many things to do\n** TODO 2.3 and so little time\nSCHEDULED: <2016-06-06 Mon>\n** TODO 2.4 to do them all\n** DONE 2.5 Except this one. You did this one.\n** DONE 2.6 important tasks\nCLOSED: [2016-06-03 Fri 14:59]\n* 3. Home :home:\n** TODO 3.1 Remember garbage day?\nSCHEDULED: <2016-06-16 Thu +1w>\n:PROPERTIES:\n:LAST_REPEAT: [2016-06-03 Fri 21:32]\n:END:\n:LOGBOOK:\n- State \"DONE\"       from \"TODO\"       [2016-06-03 Fri 21:32]\n:END:\n** TODO 3.2 You should go to that thing\nSCHEDULED: <2016-06-13 Mon 20:00>\n*** DONE 3.2.1 Wow go buy some gifts or something \nCLOSED: [2016-06-11 Sat 21:33] DEADLINE: <2016-06-12 Sun>\n* 4. hobbies\n** 4.1 hobby #1\n*** TODO 4.1.1 Things and stuff hobby #1\n** 4.2 hobby #2\n*** TODO 4.2.1 Things and stuff hobby #2\n** 4.3 hobby #3\n*** TODO 4.3.1 Things and stuff hobby #3\n** 4.4 hobby #4\n*** TODO 4.4.1 Things and stuff hobby #4\n**** TODO this one has lots of nesting\n***** TODO and many children\n***** TODO to make the tree traversal complex\n***** TODO Although not all tasks are TODO here\n***** DONE Like this one.  This one is done'
+  );
 }
 
 export function orgAction(state=createTestDoc(), action) {
@@ -106,6 +110,10 @@ function tagsFromText(text) {
 
 function getKeyword(node) {
   return Org.getMeta(node, 'keyword');
+}
+
+function dateToRelativeText(then) {
+  return Moment([then.year, then.month - 1, then.day]).fromNow();
 }
 
 /**********************/
@@ -166,19 +174,21 @@ NodePath = connect(() => ({}),
                    }))(NodePath);
 
 function Node({ node }) {
-  let multiline = Org.isSection(node);
-  let nodeButton = Org.isSection(node) ? null : (<CollapseNodeButton node={node}/>);
+  let isSection = Org.isSection(node);
+  let nodeButton = isSection ? null : (<CollapseNodeButton node={node}/>);
   let nodeContent;
   if (!!Org.getMeta(node, 'editing')) {
-    nodeContent = <EditNodeContent node={node} path={['content']} multiline={multiline}/>
+    nodeContent = <EditNodeContent node={node} path={['content']} multiline={isSection}/>;
   } else {
-    nodeContent = <NodePath node={node} path={['content']}/>
+    nodeContent = <NodePath node={node} path={['content']}/>;
   }
+  let keyword = getKeyword(node);
 
   return (
     <View>
       <View style={{flexDirection: 'row'}}>
         {nodeButton}
+        <Keyword keyword={keyword} />
         {nodeContent}
       </View>
       <View style={styles.children}>
@@ -189,26 +199,25 @@ function Node({ node }) {
 
 function TODO() {
   return (
-    <Text style={{color: 'red'}}>
-      TODO
-    </Text>)
+    <Text style={{color: 'red'}}> TODO </Text>
+  );
 }
 
 function DONE() {
   return (
-    <Text style={{color: 'green'}}>
-      DONE
-    </Text>
+    <Text style={{color: 'green'}}> DONE </Text>
   )
 }
 
 function Keyword({ keyword }) {
-  if (keyword === 'TODO') {
-    return <TODO/>
+  if (keyword == null) {
+    return <View />;
+  } else if (keyword === 'TODO') {
+    return <TODO/>;
   } else if (keyword === 'DONE') {
-    return <DONE/>
+    return <DONE/>;
   } else {
-    return <Text style={{color: 'blue'}}> TEST </Text>;
+    return <Text style={{color: 'blue'}}> {keyword} </Text>;
   }
 }
 
@@ -293,6 +302,64 @@ function Children({ node }) {
   </View>);
 }
 
+function TodoRender({ root, searchStr }) {
+  filtered = Org.search(root, searchStr);
+
+  let datasource = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2})
+  let cloned = datasource.cloneWithRows(filtered);
+  let dates = (node) => {
+    let planning = node.getIn(['meta', 'planning']);
+    if (planning == null) {
+      return <Text />
+    }
+    let scheduled = null;
+    let deadline = null;
+    let closed = null;
+    let getOffset = (ts) => (<Text> {dateToRelativeText(ts)} </Text>);
+    let entry;
+    for (entry of planning) {
+      let ts = entry.get('timestamp');
+      switch (entry.get('type')) {
+        case 'SCHEDULED':
+          scheduled = getOffset(ts);
+          break;
+        case 'DEADLINE':
+          deadline = getOffset(ts);
+          break;
+        case 'CLOSED':
+          closed = getOffset(ts);
+          break;
+        default:
+          continue;
+      }
+    }
+    return (
+      <View>
+        {scheduled}
+        {deadline}
+        {closed}
+      </View>);
+    }
+
+  return (
+    <ListView
+    dataSource={cloned}
+    renderRow={(node) => (
+        <Swipeout right={[{text: 'button'}]}>
+      <View>
+        <View style={[styles.row, {height: 50}]}>
+          <Keyword keyword={getKeyword(node)}/>
+          <Text> {Org.getContent(node)} </Text>
+        </View>
+        {dates(node)}
+      </View>
+        </Swipeout>)}
+    renderSeparator={(sectionID, rowID) => (<View key={`${sectionID}-${rowID}`} style={styles.separator} />)}
+    />
+  );
+}
+TodoRender = connect((state) => ({ root: state.doc }))(TodoRender);
+
 function RootNodeRender({ node }) {
   return (
     <View style={styles.tree}>
@@ -347,6 +414,7 @@ function EditNode({ node }) {
 /*** Entry point ***/
 
 function EntryViewRender({ state }) {
+  return <TodoRender searchStr={'k.eq.TODO'} />;
   if (state.focus === null) {
     return <RootNode />
   } else {
@@ -365,6 +433,10 @@ const styles = {
   },
   col: {
     flexDirection: 'column'
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#CCCCCC',
   },
   children: {
     paddingLeft: 20
