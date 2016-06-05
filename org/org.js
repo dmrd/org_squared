@@ -220,7 +220,11 @@ export function next(cursor) {
 
   let parent = getParent(cursor);
   if (parent != undefined) {
-    return nextSibling(parent);
+    let parentSibling;
+    while (parent != null && (parentSibling = nextSibling(parent)) == null) {
+      parent = getParent(parent);
+    }
+    return parentSibling;
   }
   return undefined;
 }
@@ -427,7 +431,7 @@ function createFilter(str) {
   // Property 
   let propInfo = properties[propertyStr];
   if (propInfo === undefined) {
-    console.warn("Invalid property " + propertyStr)
+    console.warn("Invalid property " + propertyStr);
     return (() => true);
   }
 
