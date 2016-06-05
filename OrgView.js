@@ -113,7 +113,7 @@ function getKeyword(node) {
 }
 
 function dateToRelativeText(then) {
-  return Moment([then.year, then.month - 1, then.day]).fromNow(true);
+  return Moment([then.year, then.month - 1, then.day]).fromNow();
 }
 
 /**********************/
@@ -304,9 +304,10 @@ function Children({ node }) {
 
 function TodoRender({ root, searchStr }) {
   filtered = Org.search(root, searchStr);
+  sorted = Org.sort(filtered, 's');
 
   let datasource = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2})
-  let cloned = datasource.cloneWithRows(filtered);
+  let cloned = datasource.cloneWithRows(sorted);
   let dates = (node) => {
     let planning = node.getIn(['meta', 'planning']);
     if (planning == null) {
@@ -316,7 +317,7 @@ function TodoRender({ root, searchStr }) {
     for (type of ['SCHEDULED', 'DEADLINE', 'CLOSED']) {
       if (planning.has(type)) {
         dates.push(
-          <Text key={type}> {type[0]}: {dateToRelativeText(planning.get(type))} </Text>
+         <Text key={type}> {type[0]}: {dateToRelativeText(planning.get(type))} </Text> 
         );
       }
     }
@@ -343,6 +344,7 @@ function TodoRender({ root, searchStr }) {
     />
   );
 }
+
 TodoRender = connect((state) => ({ root: state.doc }))(TodoRender);
 
 function RootNodeRender({ node }) {
@@ -399,7 +401,7 @@ function EditNode({ node }) {
 /*** Entry point ***/
 
 function EntryViewRender({ state }) {
-  return <TodoRender searchStr={'k.eq.TODO'} />;
+  return <TodoRender searchStr={'k.eq.TODO s.neq.none'} />;
   if (state.focus === null) {
     return <RootNode />
   } else {

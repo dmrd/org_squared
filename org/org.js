@@ -11,8 +11,10 @@ import {
 } from 'immutable';
 let Cursor = require('immutable/contrib/cursor');
 
-export function pprint(object) {
-  console.warn(JSON.stringify(object, null, 2));
+export function pprint(object, output=true) {
+  let str = JSON.stringify(object, null, 2); 
+  if (output) { console.warn(str) ;}
+  return str;
 }
 
 
@@ -343,7 +345,7 @@ function padTs(n) { return (n < 10) ? '0' + n : n; }
 
 let tsOrder = ['year', 'month', 'day'];
 let ts0 = new Timestamp({year: 0, month: 0, day: 0});
-function tsComparator(a, b) {
+export function tsComparator(a, b) {
   // treat null as 0 ts
   if (a == null) { a = ts0; }
   if (b == null) { b = ts0; }
@@ -516,7 +518,7 @@ export function sort(nodes, property, comparator=null) {
     if (type === 'str') {
       op = strOps['lt'];
     } else if (type === 'ts') {
-      op = tsOps['lt'];
+      op = tsComparator;
     }
   }
 
@@ -525,15 +527,8 @@ export function sort(nodes, property, comparator=null) {
     return nodes;
   }
 
-  // More efficient to do the `get` once
-  if (nodes instanceof List) {
-    return nodes.sortBy(
-      get,
-      op
-    );
-  } else {
-    return nodes.sort((a, b) => {
-      return op(get(a), get(b));
-    });
-  }
+  let sorted = nodes.sort((a, b) => {
+    return op(get(a), get(b));
+  });
+  return sorted;
 }

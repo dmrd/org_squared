@@ -9,11 +9,6 @@ let {
   Set
 } = Immutable;
 
-// Helper function for debugging
-function pprint(object) {
-  console.log(JSON.stringify(object, null, 2));
-}
-
 function node(type, content, children = List()) {
   return {
     type: type,
@@ -72,9 +67,9 @@ describe('inserting', () => {
       let h = Org.TYPES.headline;
       checkStructure(
         [node(h, 1, [
-            node(h, 2)
-          ]),
-          node(h, 3)
+          node(h, 2)
+        ]),
+         node(h, 3)
         ],
         Org.getDoc(h3_c).children
       );
@@ -83,18 +78,18 @@ describe('inserting', () => {
 });
 
 describe('parser', () => {
-    it('can parse just headlines', () => {
-      let h = Org.TYPES.headline;
-      let doc = parser.parse("** 1\n***2\n*3\n");
-      checkStructure(
-        [node(h, '1', [
-            node(h, '2')
-          ]),
-          node(h, '3')
-        ],
-        doc.children
-      );
-    });
+  it('can parse just headlines', () => {
+    let h = Org.TYPES.headline;
+    let doc = parser.parse("** 1\n***2\n*3\n");
+    checkStructure(
+      [node(h, '1', [
+        node(h, '2')
+      ]),
+       node(h, '3')
+      ],
+      doc.children
+    );
+  });
   it('headline tags, priority, and keywords parse', () => {
     let doc = parser.parse("* TODO [#A] 1 :tag:tag2:");
     let headline = doc.children.get(0);
@@ -109,62 +104,72 @@ describe('parser', () => {
       let doc = parser.parse("* test\nSCHEDULED: <2016-06-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n");
       expect(doc.getIn(['children', 0, 'meta', 'planning']).deref()).to.equal(Immutable.fromJS(
         {
-            "SCHEDULED":
-            {
-              "active": true,
-              "year": "2016",
-              "month": "06",
-              "day": "01",
-              "hour": null,
-              "minute": null,
-              "dayname": "Wed",
-              "repeater": {
-                "mark": "+",
-                "value": "1",
-                "unit": "w"
+          "SCHEDULED":
+          {
+            "active": true,
+            "year": "2016",
+            "month": "06",
+            "day": "01",
+            "hour": null,
+            "minute": null,
+            "dayname": "Wed",
+            "repeater": {
+              "mark": "+",
+              "value": "1",
+              "unit": "w"
             }
           },
-            "DEADLINE":
-            {
-              "active": true,
-              "year": "2016",
-              "month": "06",
-              "day": "02",
-              "hour": "8",
-              "minute": "00",
-              "dayname": "Thu",
-              "repeater": null
-            }
+          "DEADLINE":
+          {
+            "active": true,
+            "year": "2016",
+            "month": "06",
+            "day": "02",
+            "hour": "8",
+            "minute": "00",
+            "dayname": "Thu",
+            "repeater": null
+          }
         }
-        ));
+      ));
     });
   });
 });
 
-describe('search', () => {
-  // TODO: Test all operators
-  let doc = parser.parse("* TODO 1\n** DONE 1.1\nSCHEDULED: <2016-06-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n*** TODO 1.1.1\n* 2\nDEADLINE: <2016-07-10 Fri> SCHEDULED: <2016-07-05 Fri>\n* TODO 3\n* DONE 4");
+describe('search and sort', () => {
+  let doc = parser.parse("* TODO 1\n** DONE 1.1\nSCHEDULED: <2016-09-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n*** TODO 1.1.1\n* 2\nDEADLINE: <2016-07-10 Fri> SCHEDULED: <2016-06-05 Fri>\n* TODO 3\n* DONE 4");
   let getContents = (nodes) => nodes.map((node) => { return Org.getContent(node); });
-  describe('timestamps', () => {
-    it('can search by schedule gte', () => {
-      let found = Org.search(doc, 's.gte.2016-06-02');
-      expect(getContents(found)).to.eql(['2'])
+  describe('search', () => {
+    // TODO: Test all operators
+    describe('timestamps', () => {
+      it('can search by schedule gte', () => {
+        let found = Org.search(doc, 's.gte.2016-07-03');
+        expect(getContents(found)).to.eql(['1.1'])
+      });
+
+      it('can search by schedule lte', () => {
+        let found = Org.search(doc, 's.lte.2016-06-10 s.neq.none');
+        expect(getContents(found)).to.eql(['2'])
+      });
     });
 
-    it('can search by schedule lte', () => {
-      let found = Org.search(doc, 's.lte.2016-06-02 s.neq.none');
-      expect(getContents(found)).to.eql(['1.1'])
+    describe('keywords', () => {
+      it('DONE', () => {
+        let found = Org.search(doc, 'k.eq.DONE');
+        expect(getContents(found)).to.eql(['1.1', '4']);
+      });
+      it('TODO', () => {
+        let found = Org.search(doc, 'k.eq.TODO');
+        expect(getContents(found)).to.eql(['1', '1.1.1', '3']);
+      });
     });
   });
 
-  describe('keywords', () => {
-    it('DONE', () => {
-      let found = Org.search(doc, 'k.eq.DONE');
-      expect(getContents(found)).to.eql(['1.1', '4']);
-    });
-    it('TODO', () => {
-      let found = Org.search(doc, 'k.eq.TODO');
-      expect(getContents(found)).to.eql(['1', '1.1.1', '3']);
+  describe('sort', () => {
+    it('can sort by scheduled', () => {
+      let found = Org.search(doc, 's.neq.none');
+      let sorted = Org.sort(found, 's');
+      expect(getContents(sorted)).to.eql(['2', '1.1']);
     });
   });
 });
