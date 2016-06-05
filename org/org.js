@@ -333,31 +333,48 @@ let properties = {
   t:     {type: 'set', get: getTags},
   k:     {type: 'str', get: getKeyword},
   // TODO this should probably be inverted str (A < B, but #A > #B in priority)
-  p:     {type: 'str', get: getPriority}
+  p:     {type: 'str', get: getPriority},
+  i:     {type: 'node', get: (x) => x}, // identity
+  pl:     {type: 'node', get: (x) => x.getIn(['meta', 'planning'])}
 };
 
 function padTs(n) { return (n < 10) ? '0' + n : n; }
 
 
 let tsOrder = ['year', 'month', 'day'];
-function tsOp(op, ts, searchTerm) {
-  if (ts == undefined) { return false; }
-  let field;
-  for (field of tsOrder) {
-    if (!op(ts[field], searchTerm[field])) {
-      return false;
+let ts0 = new Timestamp({year: 0, month: 0, day: 0});
+function tsComparator(a, b) {
+  // treat null as 0 ts
+  if (a == null) { a = ts0; }
+  if (b == null) { b = ts0; }
+
+  console.warn('------')
+  console.warn(a)
+  console.warn(b)
+  for (part of tsOrder) {
+    if (a[part] == b[part]) {
+      continue;
+    }
+    if (a[part] < b[part]) {
+      console.log('-1')
+      return -1;
+    } else {
+      console.log('1')
+      return 1;
     }
   }
-  return true;
+  console.log('0')
+  return 0;
 }
 
-let tsOps = {
-  eq  : (ts, term) => { return tsOp((a,b) => (a === b), ts, term); },
-  neq : (ts, term) => { return tsOp((a,b) => (a !== b), ts, term); },
-  lt  : (ts, term) => { return tsOp((a,b) => (a < b), ts, term); },
-  lte : (ts, term) => { return tsOp((a,b) => (a <= b), ts, term); },
-  gt  : (ts, term) => { return tsOp((a,b) => (a > b), ts, term); },
-  gte : (ts, term) => { return tsOp((a,b) => (a >= b), ts, term); }
+export let tsOps = {
+  // Treat null timestamps as 0 timestamps
+  eq  : (a, b) => tsComparator(a, b) === 0,
+  neq : (a, b) => tsComparator(a, b) !== 0,
+  lt  : (a, b) => tsComparator(a, b) < 0,
+  lte : (a, b) => tsComparator(a, b) <= 0,
+  gt  : (a, b) => tsComparator(a, b) > 0,
+  gte : (a, b) => tsComparator(a, b) >= 0
 };
 
 let strOps = {
@@ -369,6 +386,8 @@ let strOps = {
   gte : (str, term) => { return str.indexOf(term) !== -1; }
 };
 
+
+
 function tsValue(str) {
   let date = new Date();
   let addDays = (n) => date.setDate(date.getDate() + n);
@@ -378,6 +397,8 @@ function tsValue(str) {
 
   // Named days
   switch (str) {
+  case 'n':
+    return new Date(0,0,0);;
   case 'yesterday':
     addDays(-1);
     return date;
@@ -450,9 +471,12 @@ function createFilter(str) {
   if (type === 'str') {
     searchValue = valueStr;
   } else if (type === 'ts') {
-    searchValue = tsFromDate(tsValue(valueStr));
+    if (valueStr === 'none') {
+      searchValue = ts0;
+    } else {
+      searchValue = tsFromDate(tsValue(valueStr));
+    }
   }
-
   return (node) => {
     let propValue = get(node);
     return op(propValue, searchValue);
@@ -460,15 +484,62 @@ function createFilter(str) {
 }
 
 export function search(root, searchStr) {
-  let filter = createFilter(searchStr);
+  parts = searchStr.split(' ');
+  let filters = parts.map(part => createFilter(part));
   let found = [];
   let cur = root;
   while (cur != undefined) {
-    if (filter(cur)) {
-      found.push(cur);
+    console.warn(cur);
+    for (filter of filters) {
+      if (!filter(cur)) {
+        cur = next(cur);
+        continue;
+      }
     }
+    found.push(cur);
     cur = next(cur);
   }
   return found;
 }
 
+/*
+ * Sort a list of nodes based on given property (one of `properties`)
+ * Optional comparator for the given property
+ */
+export function sort(nodes, property, comparator=null) {
+  // Property 
+  let propInfo = properties[property];
+  if (propInfo === undefined) {
+    console.warn("Invalid property " + property);
+    return nodes;
+  }
+
+  let {type, get} = propInfo;
+
+  // Op
+  let op = null;;
+  if (op == null) {
+    if (type === 'str') {
+      op = strOps['lt'];
+    } else if (type === 'ts') {
+      op = tsOps['lt'];
+    }
+  }
+
+  if (op == null) {
+    console.warn("Not lt operator defined for " + property);
+    return nodes;
+  }
+
+  // More efficient to do the `get` once
+  if (nodes instanceof List) {
+    return nodes.sortBy(
+      get,
+      op
+    );
+  } else {
+    return nodes.sort((a, b) => {
+      return op(get(a), get(b));
+    });
+  }
+}
