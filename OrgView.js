@@ -113,7 +113,7 @@ function getKeyword(node) {
 }
 
 function dateToRelativeText(then) {
-  return Moment([then.year, then.month - 1, then.day]).fromNow();
+  return Moment([then.year, then.month - 1, then.day]).fromNow(true);
 }
 
 /**********************/
@@ -312,32 +312,17 @@ function TodoRender({ root, searchStr }) {
     if (planning == null) {
       return <Text />
     }
-    let scheduled = null;
-    let deadline = null;
-    let closed = null;
-    let getOffset = (ts) => (<Text> {dateToRelativeText(ts)} </Text>);
-    let entry;
-    for (entry of planning) {
-      let ts = entry.get('timestamp');
-      switch (entry.get('type')) {
-        case 'SCHEDULED':
-          scheduled = getOffset(ts);
-          break;
-        case 'DEADLINE':
-          deadline = getOffset(ts);
-          break;
-        case 'CLOSED':
-          closed = getOffset(ts);
-          break;
-        default:
-          continue;
+    let dates = []
+    for (type of ['SCHEDULED', 'DEADLINE', 'CLOSED']) {
+      if (planning.has(type)) {
+        dates.push(
+          <Text key={type}> {type[0]}: {dateToRelativeText(planning.get(type))} </Text>
+        );
       }
     }
     return (
       <View>
-        {scheduled}
-        {deadline}
-        {closed}
+        {dates}
       </View>);
     }
 
@@ -345,15 +330,15 @@ function TodoRender({ root, searchStr }) {
     <ListView
     dataSource={cloned}
     renderRow={(node) => (
-        <Swipeout right={[{text: 'button'}]}>
-      <View>
-        <View style={[styles.row, {height: 50}]}>
-          <Keyword keyword={getKeyword(node)}/>
-          <Text> {Org.getContent(node)} </Text>
+      <Swipeout right={[{text: 'button'}]}>
+        <View>
+          <View style={[styles.row, {height: 50}]}>
+            <Keyword keyword={getKeyword(node)}/>
+            <Text> {Org.getContent(node)} </Text>
+          </View>
+          {dates(node)}
         </View>
-        {dates(node)}
-      </View>
-        </Swipeout>)}
+      </Swipeout>)}
     renderSeparator={(sectionID, rowID) => (<View key={`${sectionID}-${rowID}`} style={styles.separator} />)}
     />
   );
