@@ -108,10 +108,9 @@ describe('parser', () => {
     it('parses scheduled and deadline', () => {
       let doc = parser.parse("* test\nSCHEDULED: <2016-06-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n");
       expect(doc.getIn(['children', 0, 'meta', 'planning']).deref()).to.equal(Immutable.fromJS(
-        [
-          {
-            "type": "SCHEDULED",
-            "timestamp": {
+        {
+            "SCHEDULED":
+            {
               "active": true,
               "year": "2016",
               "month": "06",
@@ -123,12 +122,10 @@ describe('parser', () => {
                 "mark": "+",
                 "value": "1",
                 "unit": "w"
-              }
             }
           },
-          {
-            "type": "DEADLINE",
-            "timestamp": {
+            "DEADLINE":
+            {
               "active": true,
               "year": "2016",
               "month": "06",
@@ -138,8 +135,8 @@ describe('parser', () => {
               "dayname": "Thu",
               "repeater": null
             }
-          }
-        ]));
+        }
+        ));
     });
   });
 });

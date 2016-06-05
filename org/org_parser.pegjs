@@ -87,12 +87,24 @@ repeater = mark:$mark value:$number* tsunit:$tsunit {
   })
 }
 
-planning = entries:padded_planning_entry* EOL { return Immutable.List(entries); }
+planning = entries:padded_planning_entry* EOL {
+  let entry;
+  let keywords = {};
+  for (entry of entries) {
+    let type = entry['type']
+    if (type in keywords) {
+      continue;
+    }
+    keywords[type] = entry['timestamp'];
+  }
+  return Immutable.Map(keywords);
+}
+
 padded_planning_entry = spaces* entry:planning_entry spaces* { return entry; }
 planning_entry = scheduled / deadline / closed
-scheduled = 'SCHEDULED: ' timestamp:ts_block { return Immutable.Map({type: 'SCHEDULED', timestamp}) }
-deadline = 'DEADLINE: ' timestamp:ts_block { return Immutable.Map({type: 'DEADLINE', timestamp}) }
-closed = 'CLOSED: ' timestamp:ts_block { return Immutable.Map({type: 'CLOSED', timestamp}) }
+scheduled = 'SCHEDULED: ' timestamp:ts_block { return {type: 'SCHEDULED', timestamp}; }
+deadline = 'DEADLINE: ' timestamp:ts_block { return {type: 'DEADLINE', timestamp}; }
+closed = 'CLOSED: ' timestamp:ts_block { return {type: 'CLOSED', timestamp}; }
 
 ts = date:date ' '* time:time? ' '* repeater:repeater? {
   if (!!time) {

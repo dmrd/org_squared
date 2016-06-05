@@ -287,13 +287,8 @@ function getPlanning(type) {
     if (planning == undefined) {
       return undefined;
     }
-    let entry;
-    for (entry of planning) {
-      if (entry.get('type') == type) {
-        return entry.get('timestamp');
-      }
-    }
-    return undefined;
+
+    return planning.get(type);
   };
 }
 
