@@ -348,22 +348,16 @@ function tsComparator(a, b) {
   if (a == null) { a = ts0; }
   if (b == null) { b = ts0; }
 
-  console.warn('------')
-  console.warn(a)
-  console.warn(b)
   for (part of tsOrder) {
     if (a[part] == b[part]) {
       continue;
     }
     if (a[part] < b[part]) {
-      console.log('-1')
       return -1;
     } else {
-      console.log('1')
       return 1;
     }
   }
-  console.log('0')
   return 0;
 }
 
@@ -397,8 +391,6 @@ function tsValue(str) {
 
   // Named days
   switch (str) {
-  case 'n':
-    return new Date(0,0,0);;
   case 'yesterday':
     addDays(-1);
     return date;
@@ -489,14 +481,16 @@ export function search(root, searchStr) {
   let found = [];
   let cur = root;
   while (cur != undefined) {
-    console.warn(cur);
+    let add = true;
     for (filter of filters) {
       if (!filter(cur)) {
-        cur = next(cur);
-        continue;
+        add = false;
+        break;
       }
     }
-    found.push(cur);
+    if (add) {
+      found.push(cur);
+    }
     cur = next(cur);
   }
   return found;

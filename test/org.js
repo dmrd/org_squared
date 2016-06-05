@@ -146,8 +146,13 @@ describe('search', () => {
   let doc = parser.parse("* TODO 1\n** DONE 1.1\nSCHEDULED: <2016-06-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n*** TODO 1.1.1\n* 2\nDEADLINE: <2016-07-10 Fri> SCHEDULED: <2016-07-05 Fri>\n* TODO 3\n* DONE 4");
   let getContents = (nodes) => nodes.map((node) => { return Org.getContent(node); });
   describe('timestamps', () => {
-    it('can search by scheduled', () => {
-      let found = Org.search(doc, 's.lte.2016-06-01');
+    it('can search by schedule gte', () => {
+      let found = Org.search(doc, 's.gte.2016-06-02');
+      expect(getContents(found)).to.eql(['2'])
+    });
+
+    it('can search by schedule lte', () => {
+      let found = Org.search(doc, 's.lte.2016-06-02 s.neq.none');
       expect(getContents(found)).to.eql(['1.1'])
     });
   });
