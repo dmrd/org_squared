@@ -304,7 +304,31 @@ function Children({ node }) {
 
 function TodoRender({ root, searchStr }) {
   filtered = Org.search(root, searchStr);
-  sorted = Org.sort(filtered, 's');
+  sorted = Org.sort(filtered, 'pl', (a, b) => {
+    let as = a ? a.get('SCHEDULED') : null;
+    let ad = a ? a.get('DEADLINE') : null;
+    let bs = b ? b.get('SCHEDULED') : null;
+    let bd = b ? b.get('DEADLINE') : null;
+
+    cmp = Org.tsComparator;
+    // TODO: cleanup
+    [amin, amax] = cmp(as, ad) < 0 ? [as, ad] : [ad, as];
+    [bmin, bmax] = cmp(bs, bd) < 0 ? [bs, bd] : [bd, bs];
+
+    [amin, amax] = amin != null ? [amin, amax] : [amax, null];
+    [bmin, bmax] = bmin != null ? [bmin, bmax] : [bmax, null];
+
+    /*
+     * Sort by minimum non-null timestamp, break ties with max
+     */
+
+    let ret = cmp(amin, bmin);
+    if (ret == 0) {
+      ret = cmp(amax, bmax);
+    }
+    return ret
+  }
+  );
 
   let datasource = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2})
   let cloned = datasource.cloneWithRows(sorted);
@@ -401,7 +425,7 @@ function EditNode({ node }) {
 /*** Entry point ***/
 
 function EntryViewRender({ state }) {
-  return <TodoRender searchStr={'k.eq.TODO s.neq.none'} />;
+  return <TodoRender searchStr={'k.eq.TODO'} />;
   if (state.focus === null) {
     return <RootNode />
   } else {

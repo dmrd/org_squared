@@ -337,7 +337,7 @@ let properties = {
   // TODO this should probably be inverted str (A < B, but #A > #B in priority)
   p:     {type: 'str', get: getPriority},
   i:     {type: 'node', get: (x) => x}, // identity
-  pl:     {type: 'node', get: (x) => x.getIn(['meta', 'planning'])}
+  pl:     {type: 'object', get: (x) => x.getIn(['meta', 'planning'])}
 };
 
 function padTs(n) { return (n < 10) ? '0' + n : n; }
@@ -453,6 +453,10 @@ function createFilter(str) {
     op = strOps[operatorStr];
   } else if (type === 'ts') {
     op = tsOps[operatorStr];
+  } else if (type === 'object') {
+    op = {'eq': (a,b) => a == b,
+          'neq': (a,b) => a != b
+         }[operatorStr];
   }
 
   if (op == null) {
@@ -470,7 +474,12 @@ function createFilter(str) {
     } else {
       searchValue = tsFromDate(tsValue(valueStr));
     }
+  } else if (type === 'object') {
+    if (valueStr === 'none') {
+      searchValue = null;
+    }
   }
+
   return (node) => {
     let propValue = get(node);
     return op(propValue, searchValue);
@@ -513,7 +522,7 @@ export function sort(nodes, property, comparator=null) {
   let {type, get} = propInfo;
 
   // Op
-  let op = null;;
+  let op = comparator;;
   if (op == null) {
     if (type === 'str') {
       op = strOps['lt'];
@@ -523,7 +532,7 @@ export function sort(nodes, property, comparator=null) {
   }
 
   if (op == null) {
-    console.warn("Not lt operator defined for " + property);
+    console.warn("No lt operator defined for " + property);
     return nodes;
   }
 
