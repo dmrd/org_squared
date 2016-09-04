@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "description": "Flexible & extensible Org mode client",
-  "author": "David Dohan",
+  "author": "David Dohan <dmrdohan@gmail.com>",
   "private": true,
   "main": "main.js",
   "scripts": {
@@ -14,8 +14,15 @@
     "sdkVersion": "5.0.0"
   },
   "dependencies": {
-    "react": "^0.14.5",
-    "react-native": "github:exponentjs/react-native#sdk-5.0.0",
+    "@exponent/ex-navigation": "^1.5.8",
+    "@exponent/samples": "^1.0.2",
+    "@exponent/vector-icons": "^1.0.1",
+    "babel-preset-react-native-stage-0": "^1.0.1",
+    "exponent": "^9.0.2",
+    "lodash": "^4.13.1",
+    "react": "15.2.1",
+    "react-native": "github:exponentjs/react-native#sdk-9.0.0",
+
     "react-native-swipeout": "^2.0.12",
     "react-redux": "^4.4.5",
     "redux": "^3.5.2"

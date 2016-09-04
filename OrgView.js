@@ -1,12 +1,14 @@
-import { connect } from 'react-redux';
 
-let React = require('react-native');
 let Swipeout = require('react-native-swipeout');
 let Org = require('./org/org');
 let Parser = require('./org/org_parser');
 let Moment = require('moment');
 
-let {
+import { connect } from 'react-redux';
+
+import React, {Component} from 'react';
+
+import {
   ListView,
   Picker,
   Text,
@@ -14,7 +16,7 @@ let {
   TouchableHighlight,
   TouchableWithoutFeedback,
   View
-} = React;
+} from 'react-native';
 
 
 /***** Actions *****/
