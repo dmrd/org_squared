@@ -66,16 +66,16 @@ class AppContainer extends React.Component {
       return (
         <View style={styles.container}>
           <Provider store={store}>
-          <NavigationProvider router={Router}>
-            <StackNavigation
-              id="root"
-              initialRoute={Router.getRoute('home')}
-            />
-          </NavigationProvider>
+            <NavigationProvider router={Router}>
+              <StackNavigation
+                id="root"
+                initialRoute={Router.getRoute('home')}
+              />
+            </NavigationProvider>
+          </Provider>
 
           {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
           {Platform.OS === 'android' && <View style={styles.statusBarUnderlay} />}
-          </Provider>
         </View>
       );
 

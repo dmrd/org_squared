@@ -427,7 +427,10 @@ function EditNode({ node }) {
 /*** Entry point ***/
 
 function EntryViewRender({ state }) {
-  return <TodoRender searchStr={'k.eq.TODO'} />;
+  // NOTE(brentvatne): this seems to not work right now, not sure if it is here
+  // intentionally or what
+  // return <TodoRender searchStr={'k.eq.TODO'} />;
+
   if (state.focus === null) {
     return <RootNode />
   } else {
@@ -435,7 +438,7 @@ function EntryViewRender({ state }) {
   }
 }
 
-export let EntryView = connect((state) => ({ state: state }))(EntryViewRender)
+export let EntryView = connect((state) => ({ state }))(EntryViewRender)
 
 const styles = {
   tree: {
