@@ -10,9 +10,6 @@
     "test": "mocha --compilers js:babel-core/register --require ./test/test_helper.js --recursive",
     "test:watch": "npm run test -- --watch"
   },
-  "exp": {
-    "sdkVersion": "5.0.0"
-  },
   "dependencies": {
     "@exponent/ex-navigation": "^1.5.8",
     "@exponent/samples": "^1.0.2",
@@ -22,8 +19,7 @@
     "lodash": "^4.13.1",
     "react": "15.2.1",
     "react-native": "github:exponentjs/react-native#sdk-9.0.0",
-
-    "react-native-swipeout": "^2.0.12",
+    "react-native-swipeout": "github:dancormier/react-native-swipeout#829b7c01",
     "react-redux": "^4.4.5",
     "redux": "^3.5.2"
   },
