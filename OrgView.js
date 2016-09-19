@@ -17,6 +17,7 @@ import {
   TextInput,
   TouchableHighlight,
   TouchableWithoutFeedback,
+  ScrollView,
   View
 } from 'react-native';
 
@@ -159,16 +160,16 @@ let EditNodeContent = connect(() => ({}),
 /*** Fields ***/
 function NodePath({ node, path, onPress, onLongPress }) {
   return (
-    <TouchableWithoutFeedback
-      onLongPress={() => onLongPress(node)}>
+    <TouchableHighlight
+      onPress={() => onPress(node)}
+      onLongPress={() => onLongPress(node)}> 
       <View>
         <Text
-          onPress={() => onPress(node)}
           style={styles.flex}>
           {node.getIn(path)}
         </Text>
       </View>
-    </TouchableWithoutFeedback>
+    </TouchableHighlight>
 
   );
 }
@@ -355,21 +356,19 @@ function TodoRender({ root, searchStr }) {
       <View>
         {dates}
       </View>);
-    }
+  }
 
   return (
     <ListView
     dataSource={cloned}
     renderRow={(node) => (
-      <Swipeout right={[{text: 'button'}]}>
         <View>
           <View style={[styles.row, {height: 50}]}>
             <Keyword keyword={getKeyword(node)}/>
             <Text> {Org.getContent(node)} </Text>
           </View>
           {dates(node)}
-        </View>
-      </Swipeout>)}
+        </View>)}
     renderSeparator={(sectionID, rowID) => (<View key={`${sectionID}-${rowID}`} style={styles.separator} />)}
     />
   );
@@ -447,13 +446,12 @@ export class OutlineView extends Component {
   }
 
   render() {
-    // return <TodoRender searchStr={'k.eq.TODO'} />;
+    /* return <TodoRender searchStr={'k.eq.TODO'} />;*/
     if (this.props.focus === null) {
       return <RootNode />
     } else {
       return <EditNode node={Org.createCursor(this.props.doc, this.props.focus)} />
     }
-    return <View/>
   }
 }
 
