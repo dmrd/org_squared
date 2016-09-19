@@ -1,8 +1,8 @@
 /** In order for logging to stream to XDE or the exp CLI you must import the
   * exponent module at some point in your app */
+import React from 'react';
 import Exponent from 'exponent';
 
-import React from 'react';
 import {
   AppRegistry,
   Platform,
@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import {
+  withNavigation,
   createRouter,
   NavigationProvider,
   StackNavigation,
@@ -19,69 +20,51 @@ import {
   FontAwesome,
 } from '@exponent/vector-icons';
 
-// import Router from './navigation/Router';
-// import cacheAssetsAsync from './utilities/cacheAssetsAsync';
-
-import { Provider } from 'react-redux';
+import { connect, Provider as ReduxProvider } from 'react-redux';
 import { combineReducers, createStore } from 'redux';
-let OrgView = require('./OrgView');
 
+let OrgView = require('./OrgView.js');
 
 const Router = createRouter(() => ({
-  home: () => OrgView.EntryView,
+  outline: () => OrgView.OutlineView,
+}));
+
+const OrgStore = createStore(combineReducers({
+  doc: OrgView.orgAction,
+  focus: OrgView.focus
 }));
 
 class AppContainer extends React.Component {
+  render() {
+    return (
+      <ReduxProvider store={OrgStore}>
+        <NavigationProvider router={Router}>
+          <App />
+        </NavigationProvider>
+      </ReduxProvider>
+    );
+  }
+}
+
+@withNavigation
+class App extends React.Component {
   state = {
     appIsReady: true,
-    // appIsReady: false,
   }
 
-  // componentWillMount() {
-  //   this._loadAssetsAsync();
-  // }
-
-  // async _loadAssetsAsync() {
-  //   await cacheAssetsAsync({
-  //     images: [
-  //       require('./assets/images/exponent-wordmark.png'),
-  //     ],
-  //     fonts: [
-  //       FontAwesome.font,
-  //       {'space-mono': require('./assets/fonts/SpaceMono-Regular.ttf')},
-  //     ],
-  //   });
-
-  //   this.setState({appIsReady: true});
-  // }
-
   render() {
-    if (this.state.appIsReady) {
-      let { notification } = this.props.exp;
-      const store = createStore(combineReducers({
-        doc: OrgView.orgAction,
-        focus: OrgView.focus
-      }));
 
-      return (
-        <View style={styles.container}>
-          <Provider store={store}>
-            <NavigationProvider router={Router}>
-              <StackNavigation
-                id="root"
-                initialRoute={Router.getRoute('home')}
-              />
-            </NavigationProvider>
-          </Provider>
+    return (
+      <View style={styles.container}>
+        {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
+        {Platform.OS === 'android' && <View style={styles.statusBarUnderlay} />}
 
-          {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
-          {Platform.OS === 'android' && <View style={styles.statusBarUnderlay} />}
-        </View>
-      );
-
-    } else {
-      return <Exponent.Components.AppLoading />;
-    }
+        <StackNavigation
+          id="root"
+          initialRoute={Router.getRoute('outline')}
+        />
+      </View>
+    );
   }
 }
 
@@ -91,9 +74,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   statusBarUnderlay: {
-    height: 24,
+    height: 0,
     backgroundColor: 'rgba(0,0,0,0.2)',
   },
 });
 
-AppRegistry.registerComponent('main', () => AppContainer);
+Exponent.registerRootComponent(AppContainer)

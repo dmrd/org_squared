@@ -1,12 +1,14 @@
-
 let Swipeout = require('react-native-swipeout');
 let Org = require('./org/org');
 let Parser = require('./org/org_parser');
 let Moment = require('moment');
+import {
+  withNavigation,
+} from '@exponent/ex-navigation';
 
 import { connect } from 'react-redux';
 
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 
 import {
   ListView,
@@ -122,7 +124,7 @@ function dateToRelativeText(then) {
 /***** Components *****/
 /**********************/
 
-let noop = () => {}
+let noop = () => {};
 
 /*** Editable Fields ***/
 
@@ -157,13 +159,15 @@ let EditNodeContent = connect(() => ({}),
 /*** Fields ***/
 function NodePath({ node, path, onPress, onLongPress }) {
   return (
-    <TouchableWithoutFeedback 
+    <TouchableWithoutFeedback
       onLongPress={() => onLongPress(node)}>
-      <Text
-        onPress={() => onPress(node)}
-        style={styles.flex}>
-        {node.getIn(path)}
-      </Text>
+      <View>
+        <Text
+          onPress={() => onPress(node)}
+          style={styles.flex}>
+          {node.getIn(path)}
+        </Text>
+      </View>
     </TouchableWithoutFeedback>
 
   );
@@ -426,19 +430,32 @@ function EditNode({ node }) {
 
 /*** Entry point ***/
 
-function EntryViewRender({ state }) {
-  // NOTE(brentvatne): this seems to not work right now, not sure if it is here
-  // intentionally or what
-  // return <TodoRender searchStr={'k.eq.TODO'} />;
+@withNavigation
+@connect(data => OutlineView.getDataProps)
+export class OutlineView extends Component {
+  static getDataProps(data) {
+    return {
+      doc: data.doc,
+      focus: data.focus
+    };
+  };
 
-  if (state.focus === null) {
-    return <RootNode />
-  } else {
-    return <EditNode node={Org.createCursor(state.doc, state.focus)} />
+  static route = {
+    navigationBar: {
+      title: 'Outline',
+    },
+  }
+
+  render() {
+    // return <TodoRender searchStr={'k.eq.TODO'} />;
+    if (this.props.focus === null) {
+      return <RootNode />
+    } else {
+      return <EditNode node={Org.createCursor(this.props.doc, this.props.focus)} />
+    }
+    return <View/>
   }
 }
-
-export let EntryView = connect((state) => ({ state }))(EntryViewRender)
 
 const styles = {
   tree: {
