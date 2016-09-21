@@ -1,9 +1,10 @@
-let Swipeout = require('react-native-swipeout');
 let Org = require('./org/org');
 let Parser = require('./org/org_parser');
 let Moment = require('moment');
+import { Router } from './Router'
 import {
   withNavigation,
+  NavigationActions
 } from '@exponent/ex-navigation';
 
 import { connect } from 'react-redux';
@@ -98,6 +99,26 @@ export function focus(state=null, action) {
   }
 }
 
+export function createNavReducer(navReducer) {
+  // TODO(ddohan): This feels hacky
+  return (state, action) => {
+    if (state) {
+      let navigatorUID = state.currentNavigatorUID;
+      switch (action.type) {
+        case SET_FOCUS:
+          route = Router.getRoute('edit_node')
+          action = NavigationActions.push(navigatorUID, route)
+          break
+        case CLEAR_FOCUS:
+          action = NavigationActions.pop(state.currentNavigatorUID)
+          break
+      }
+    }
+    state = navReducer(state, action)
+    return state;
+  }
+}
+
 /***** Org helpers *****/
 
 function isHidden(node) {
@@ -105,7 +126,9 @@ function isHidden(node) {
 }
 
 function tagsAsText(node) {
-  return Array.from(Org.getMeta(node, 'tags').keys()).join(' ')
+  tags = Org.getMeta(node, 'tags')
+  return Array.from(tags).join(' ')
+
 }
 
 function tagsFromText(text) {
@@ -138,6 +161,7 @@ function EditNodePath({ node, path, onChangeText=noop, onEndEditing=noop, onSubm
       onSubmitEditing={() => onSubmitEditing(node)}
       value={node.getIn(path)}
       autoFocus={true}
+      underlineColorAndroid={'transparent'}
       style={[styles.flex, ...style]}/>
   );
 }
@@ -162,7 +186,7 @@ function NodePath({ node, path, onPress, onLongPress }) {
   return (
     <TouchableHighlight
       onPress={() => onPress(node)}
-      onLongPress={() => onLongPress(node)}> 
+      onLongPress={() => onLongPress(node)}>
       <View>
         <Text
           style={styles.flex}>
@@ -174,7 +198,7 @@ function NodePath({ node, path, onPress, onLongPress }) {
   );
 }
 
-NodePath = connect(() => ({}),
+NodePath = connect((state) => ({}),
                    (dispatch) => ({
                      onPress: (node) => dispatch(setProperty(node, ['meta', 'editing'], true)),
                      onLongPress: (node) => dispatch(setFocus(node))
@@ -376,17 +400,6 @@ function TodoRender({ root, searchStr }) {
 
 TodoRender = connect((state) => ({ root: state.doc }))(TodoRender);
 
-function RootNodeRender({ node }) {
-  return (
-    <View style={styles.tree}>
-      <Children node={node} />
-    </View>
-  );
-}
-
-let RootNode = connect((state) => ({ node: state.doc }))(RootNodeRender);
-
-
 /*** Edit node view ***/
 
 function BackButton({ onPress }) {
@@ -396,42 +409,92 @@ function BackButton({ onPress }) {
     </TouchableHighlight>);
 }
 
-let UnfocusButton = connect(() => ({}),
+let UnfocusButton = connect((state) => ({}),
                             (dispatch) => ({
                               onPress: () => dispatch(clearFocus())
                             }))(BackButton);
 
-function EditNode({ node }) {
-  let child = Org.getChild(node, 0);
-  if (!!child && Org.isSection(child)) {
-    child = <EditNodePath node={child} path={['content']} multiline={true}/>
-  } else {
-    child = <View/>
-  }
-  return (
-    <View>
-      <UnfocusButton/>
-      <EditNodePath node={node} path={['content']} />
-      <View style={styles.row}>
-        <Text> Priority: </Text>
-        <PriorityDropdown node={node} />
-      </View>
-      <View style={styles.row}>
-        <Text> Keyword: </Text>
-        <KeywordDropdown node={node} />
-      </View>
-      <Text> {tagsAsText(node)} </Text>
-      {child}
-    </View>
-  )
-}
-
-
-/*** Entry point ***/
+/*** Entry points ***/
 
 @withNavigation
 @connect(data => OutlineView.getDataProps)
 export class OutlineView extends Component {
+  static getDataProps(data) {
+    return {
+      doc: data.doc,
+    };
+  };
+
+  static route = {
+    navigationBar: {
+      title: 'Outline',
+    },
+  }
+
+  render() {
+    return (<View style={styles.tree}>
+      <Children node={this.props.doc} />
+    </View>)
+  }
+
+  onPressBack = () => {
+    try {
+      this.props.navigator.pop()
+    } catch (e) {}
+  }
+}
+
+@withNavigation
+@connect(data => EditView.getDataProps)
+export class EditView extends Component {
+  static getDataProps(data) {
+    return {
+      doc: data.doc,
+      focus: data.focus,
+    };
+  };
+
+  static route = {
+    navigationBar: {
+      title: 'Edit Headline',
+    },
+  }
+
+  render() {
+    let node = Org.createCursor(this.props.doc, this.props.focus);
+    let child = Org.getChild(node, 0);
+    if (!!child && Org.isSection(child)) {
+      child = <EditNodePath node={child} path={['content']} multiline={true}/>
+    } else {
+      child = <View/>
+    }
+    return (
+      <View>
+        <EditNodePath node={node} path={['content']} />
+        <View style={styles.row}>
+          <Text> Priority: </Text>
+          <PriorityDropdown node={node} />
+        </View>
+        <View style={styles.row}>
+          <Text> Keyword: </Text>
+          <KeywordDropdown node={node} />
+        </View>
+        <Text> {tagsAsText(node)} </Text>
+        {child}
+      </View>
+    )
+  }
+
+  /* onPressBack = () => {
+   *   try {
+   *     this.props.navigator.pop()
+   *   } catch (e) {}
+   * }*/
+}
+
+@withNavigation
+@connect(data => SearchView.getDataProps)
+export class SearchView extends Component {
   static getDataProps(data) {
     return {
       doc: data.doc,
@@ -446,12 +509,13 @@ export class OutlineView extends Component {
   }
 
   render() {
-    /* return <TodoRender searchStr={'k.eq.TODO'} />;*/
-    if (this.props.focus === null) {
-      return <RootNode />
-    } else {
-      return <EditNode node={Org.createCursor(this.props.doc, this.props.focus)} />
-    }
+    return <TodoRender searchStr={'k.eq.TODO'} />;
+  }
+
+  onPressBack = () => {
+    try {
+      this.props.navigator.pop();
+    } catch (e) {}
   }
 }
 

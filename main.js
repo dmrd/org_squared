@@ -12,9 +12,10 @@ import {
 } from 'react-native';
 import {
   withNavigation,
-  createRouter,
   NavigationProvider,
   StackNavigation,
+  NavigationContext,
+  createNavigationEnabledStore, NavigationReducer
 } from '@exponent/ex-navigation';
 import {
   FontAwesome,
@@ -23,22 +24,31 @@ import {
 import { connect, Provider as ReduxProvider } from 'react-redux';
 import { combineReducers, createStore } from 'redux';
 
+import { Router } from './Router'
 let OrgView = require('./OrgView.js');
 
-const Router = createRouter(() => ({
-  outline: () => OrgView.OutlineView,
-}));
+const createStoreWithNavigation = createNavigationEnabledStore({
+  createStore,
+  navigationStateKey: 'navigation',
+});
 
-const OrgStore = createStore(combineReducers({
-  doc: OrgView.orgAction,
-  focus: OrgView.focus
-}));
+const OrgStore = createStoreWithNavigation(
+  combineReducers({
+    navigation: OrgView.createNavReducer(NavigationReducer),
+    doc: OrgView.orgAction,
+    focus: OrgView.focus
+  }));
+
+const navigationContext = new NavigationContext({
+  router: Router,
+  store: OrgStore
+})
 
 class AppContainer extends React.Component {
   render() {
     return (
       <ReduxProvider store={OrgStore}>
-        <NavigationProvider router={Router}>
+        <NavigationProvider context={navigationContext}>
           <App />
         </NavigationProvider>
       </ReduxProvider>
@@ -49,7 +59,7 @@ class AppContainer extends React.Component {
 @withNavigation
 class App extends React.Component {
   state = {
-    appIsReady: true,
+    appIsReady: true
   }
 
   render() {
