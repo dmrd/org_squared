@@ -24,8 +24,8 @@ import {
 import { connect, Provider as ReduxProvider } from 'react-redux';
 import { combineReducers, createStore } from 'redux';
 
-import { Router } from './Router'
-let OrgView = require('./OrgView.js');
+import { Router } from './Router';
+let OrgView = require('./OrgView');
 
 const createStoreWithNavigation = createNavigationEnabledStore({
   createStore,
@@ -36,13 +36,14 @@ const OrgStore = createStoreWithNavigation(
   combineReducers({
     navigation: OrgView.createNavReducer(NavigationReducer),
     doc: OrgView.orgAction,
-    focus: OrgView.focus
+    focus: OrgView.focusReducer,
+    search: OrgView.searchReducer
   }));
 
 const navigationContext = new NavigationContext({
   router: Router,
   store: OrgStore
-})
+});
 
 class AppContainer extends React.Component {
   render() {

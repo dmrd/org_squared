@@ -25,11 +25,20 @@ import {
 
 /***** Actions *****/
 
-const TOGGLE_VISIBILITY = 'TOGGLE_VISIBLE'; // type + node
-const SET_PROPERTY = 'SET_FOCUSED_PROPERTY'; // [field, path] + value
+// Toggle node visibility in outline view
+const TOGGLE_VISIBILITY = 'TOGGLE_VISIBLE';
+// Set a node property. [field, path] + value
+const SET_PROPERTY = 'SET_FOCUSED_PROPERTY';
 
+// Focus on a single node
 const SET_FOCUS = 'SET_FOCUS';
+
+// Clear single node focus
 const CLEAR_FOCUS = 'CLEAR_FOCUS';
+// Set search term
+const SEARCH = 'SEARCH';
+// Push a nav route
+const PUSH_ROUTE = 'PUSH_ROUTE';
 
 function toggleVisibility(node) {
   return {
@@ -54,9 +63,24 @@ function setFocus(node) {
   };
 }
 
+function pushRoute(route) {
+  console.log(route)
+  return {
+    type: PUSH_ROUTE,
+    value: route
+  };
+}
+
 function clearFocus() {
   return {
     type: CLEAR_FOCUS
+  }
+}
+
+function setSearch(value) {
+  return {
+    type: SEARCH,
+    value
   }
 }
 
@@ -84,7 +108,7 @@ export function orgAction(state=createTestDoc(), action) {
   }
 }
 
-export function focus(state=null, action) {
+export function focusReducer(state=null, action) {
   switch (action.type) {
     case CLEAR_FOCUS:
       return null;
@@ -99,6 +123,16 @@ export function focus(state=null, action) {
   }
 }
 
+export function searchReducer(state='k.eq.TODO', action) {
+  switch (action.type) {
+    case SEARCH:
+      return action.value
+    default:
+      return state
+  }
+}
+
+
 export function createNavReducer(navReducer) {
   // TODO(ddohan): This feels hacky
   return (state, action) => {
@@ -110,7 +144,11 @@ export function createNavReducer(navReducer) {
           action = NavigationActions.push(navigatorUID, route)
           break
         case CLEAR_FOCUS:
-          action = NavigationActions.pop(state.currentNavigatorUID)
+          action = NavigationActions.pop(navigatorUID)
+          break
+        case PUSH_ROUTE:
+          console.log(action)
+          action = NavigationActions.push(navigatorUID, Router.getRoute(action.value))
           break
       }
     }
@@ -194,7 +232,6 @@ function NodePath({ node, path, onPress, onLongPress }) {
         </Text>
       </View>
     </TouchableHighlight>
-
   );
 }
 
@@ -387,7 +424,7 @@ function TodoRender({ root, searchStr }) {
     dataSource={cloned}
     renderRow={(node) => (
         <View>
-          <View style={[styles.row, {height: 50}]}>
+          <View style={[styles.row]}>
             <Keyword keyword={getKeyword(node)}/>
             <Text> {Org.getContent(node)} </Text>
           </View>
@@ -402,17 +439,19 @@ TodoRender = connect((state) => ({ root: state.doc }))(TodoRender);
 
 /*** Edit node view ***/
 
-function BackButton({ onPress }) {
-  return (
-    <TouchableHighlight onPress={onPress}>
-      <Text>{'<<<<'}</Text>
-    </TouchableHighlight>);
+function SearchBar({searchStr, onFocus, onTextChange}) {
+  return <TextInput
+  value={searchStr}
+  onChangeText={onTextChange}
+  onFocus={onFocus}
+  style={[styles.flex]}/>
 }
 
-let UnfocusButton = connect((state) => ({}),
-                            (dispatch) => ({
-                              onPress: () => dispatch(clearFocus())
-                            }))(BackButton);
+SearchBar = connect((state) => ({searchStr: state.search}),
+                    (dispatch) => ({
+                      onFocus: () => {console.log('focus'),dispatch(pushRoute('search'))},
+                      onTextChange: (value) => dispatch(setSearch(value))
+                    }))(SearchBar)
 
 /*** Entry points ***/
 
@@ -428,6 +467,7 @@ export class OutlineView extends Component {
   static route = {
     navigationBar: {
       title: 'Outline',
+      renderRight: () => <SearchBar/>
     },
   }
 
@@ -498,18 +538,20 @@ export class SearchView extends Component {
   static getDataProps(data) {
     return {
       doc: data.doc,
-      focus: data.focus
+      focus: data.focus,
+      searchStr: data.search
     };
   };
 
   static route = {
     navigationBar: {
-      title: 'Outline',
+      title: 'Search',
+      renderRight: () => <SearchBar/>
     },
   }
 
   render() {
-    return <TodoRender searchStr={'k.eq.TODO'} />;
+    return <TodoRender searchStr={this.props.searchStr} />;
   }
 
   onPressBack = () => {
