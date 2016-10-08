@@ -9,6 +9,12 @@ let {
   Set
 } = Immutable;
 
+let doc_headlines = "* 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1"
+let doc_just_headlines = "** 1\n*** 2\n* 3\n"
+let doc_tags = "* TODO [#A] 1 :tag:tag2:"
+let doc_scheduled = "* test\nSCHEDULED: <2016-06-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n"
+let doc_timestamps = "* TODO 1\n** DONE 1.1\nSCHEDULED: <2016-09-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n*** TODO 1.1.1\n* 2\nDEADLINE: <2016-07-10 Fri> SCHEDULED: <2016-06-05 Fri>\n* TODO 3\n* DONE 4"
+
 function node(type, content, children = List()) {
   return {
     type: type,
@@ -44,7 +50,7 @@ describe('utils', () => {
   });
 
   it('iterates in order', () => {
-    let doc = parser.parse("* 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1");
+    let doc = parser.parse(doc_headlines);
     let order = [null, '1', '1.1', '1.2', '1.2.1', '1.2.2', '1.3', '2', '2.1'];
     let traversed = [];
     while (doc != undefined) {
@@ -80,7 +86,7 @@ describe('inserting', () => {
 describe('parser', () => {
   it('can parse just headlines', () => {
     let h = Org.TYPES.headline;
-    let doc = parser.parse("** 1\n***2\n*3\n");
+    let doc = parser.parse(doc_just_headlines);
     checkStructure(
       [node(h, '1', [
         node(h, '2')
@@ -90,8 +96,9 @@ describe('parser', () => {
       doc.children
     );
   });
+
   it('headline tags, priority, and keywords parse', () => {
-    let doc = parser.parse("* TODO [#A] 1 :tag:tag2:");
+    let doc = parser.parse(doc_tags);
     let headline = doc.children.get(0);
     expect(Org.getMeta(headline, 'priority')).to.equal('A');
     expect(Org.getMeta(headline, 'keyword')).to.equal('TODO');
@@ -101,7 +108,7 @@ describe('parser', () => {
   describe('timestamps', () => {
     // TODO: Generate parser that can start from ts and test timestamps individually
     it('parses scheduled and deadline', () => {
-      let doc = parser.parse("* test\nSCHEDULED: <2016-06-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n");
+      let doc = parser.parse(doc_scheduled);
       expect(doc.getIn(['children', 0, 'meta', 'planning']).deref()).to.equal(Immutable.fromJS(
         {
           "SCHEDULED":
@@ -137,7 +144,7 @@ describe('parser', () => {
 });
 
 describe('search and sort', () => {
-  let doc = parser.parse("* TODO 1\n** DONE 1.1\nSCHEDULED: <2016-09-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n*** TODO 1.1.1\n* 2\nDEADLINE: <2016-07-10 Fri> SCHEDULED: <2016-06-05 Fri>\n* TODO 3\n* DONE 4");
+  let doc = parser.parse(doc_timestamps);
   let getContents = (nodes) => nodes.map((node) => { return Org.getContent(node); });
   describe('search', () => {
     // TODO: Test all operators
@@ -172,4 +179,24 @@ describe('search and sort', () => {
       expect(getContents(sorted)).to.eql(['2', '1.1']);
     });
   });
+});
+
+describe.only('export', () => {
+  let test_export = (string) => {
+    parsed = parser.parse(string)
+    exported = Org.export_subtree(parsed)
+    expect(exported).to.eql(string.trim())
+  };
+
+  it('can export headlines', () => {
+    test_export(doc_headlines)
+    test_export(doc_just_headlines)
+  });
+  it('can export tags', () => {
+    test_export(doc_tags)
+  });
+  // it('can export timestamps', () => {
+  //  test_export(doc_scheduled)
+  //  test_export(doc_timestamps)
+  // });
 });

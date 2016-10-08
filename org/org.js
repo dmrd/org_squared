@@ -38,7 +38,7 @@ export const Repeater = Record({
   mark: null,
   value: null,
   unit: null
-})
+});
 
 export const Timestamp = Record({
   active: false,
@@ -383,7 +383,6 @@ let strOps = {
 };
 
 
-
 function tsValue(str) {
   let date = new Date();
   let addDays = (n) => date.setDate(date.getDate() + n);
@@ -540,4 +539,43 @@ export function sort(nodes, property, comparator=null) {
     return op(get(a), get(b));
   });
   return sorted;
+}
+
+///////////////
+// Exporting //
+///////////////
+/*
+ * Export from immutablejs datastructure back to .org file
+ */
+
+export function export_subtree(subtree) {
+  /* Constructs a string representing given subtree as an org mode file */
+  cur = subtree;
+  result = [];
+  while (!!cur) {
+    headline = printHeadline(cur);
+    result = result.concat(headline);
+    cur = next(cur);
+  }
+  joined = result.join('');
+  return joined.trim()
+}
+
+function printHeadline(headline) {
+  if (!isHeadline(headline)) {
+    return [];
+  }
+  return ['*'.repeat(level(headline)), ' ', getContent(headline), '\n'];
+}
+
+function printTags(headline) {
+
+}
+
+function printContent(headline) {
+
+}
+
+function printProps(headline) {
+
 }
