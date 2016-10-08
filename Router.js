@@ -7,5 +7,6 @@ let OrgView = require('./OrgView.js');
 export let Router = createRouter(() => ({
   outline: () => OrgView.OutlineView,
   edit_node: () => OrgView.EditView,
-  search: () => OrgView.SearchView
+  search: () => OrgView.SearchView,
+  drawer_menu: () => OrgView.DrawerNavigationLayout
 }));

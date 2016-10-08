@@ -15,14 +15,19 @@ import {
   NavigationProvider,
   StackNavigation,
   NavigationContext,
-  createNavigationEnabledStore, NavigationReducer
+  createNavigationEnabledStore, NavigationReducer,
+  DrawerNavigation,
+  DrawerNavigationItem,
 } from '@exponent/ex-navigation';
 import {
   FontAwesome,
 } from '@exponent/vector-icons';
+import { MenuContext } from 'react-native-menu';
 
 import { connect, Provider as ReduxProvider } from 'react-redux';
 import { combineReducers, createStore } from 'redux';
+
+import makeFlagReducer from 'redux-flag-reducer';
 
 import { Router } from './Router';
 let OrgView = require('./OrgView');
@@ -37,7 +42,9 @@ const OrgStore = createStoreWithNavigation(
     navigation: OrgView.createNavReducer(NavigationReducer),
     doc: OrgView.orgAction,
     focus: OrgView.focusReducer,
-    search: OrgView.searchReducer
+    search: OrgView.searchReducer,
+    side_menu_flag: OrgView.toggleSideMenuReducer
+    //side_menu_flag: makeFlagReducer(true, false, ['SIDE_MENU_ON'], ['SIDE_MENU_OFF'], 'false')
   }));
 
 const navigationContext = new NavigationContext({
@@ -56,6 +63,7 @@ class AppContainer extends React.Component {
     );
   }
 }
+ 
 
 @withNavigation
 class App extends React.Component {
@@ -66,15 +74,17 @@ class App extends React.Component {
   render() {
 
     return (
-      <View style={styles.container}>
-        {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
-        {Platform.OS === 'android' && <View style={styles.statusBarUnderlay} />}
+      <MenuContext style={{ flex: 1 }}>
+        <View style={styles.container}>
+          {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
+          {Platform.OS === 'android' && <View style={styles.statusBarUnderlay} />}
 
-        <StackNavigation
-          id="root"
-          initialRoute={Router.getRoute('outline')}
-        />
-      </View>
+          <StackNavigation
+            id="root"
+            initialRoute={Router.getRoute('drawer_menu')}
+          />
+        </View>
+      </MenuContext>
     );
   }
 }

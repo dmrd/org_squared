@@ -13,15 +13,18 @@
   "dependencies": {
     "@exponent/ex-navigation": "^1.5.29",
     "@exponent/samples": "^1.0.2",
-    "@exponent/vector-icons": "^1.0.1",
+    "@exponent/vector-icons": "^1.0.4",
     "babel-preset-react-native-stage-0": "^1.0.1",
     "exponent": "^9.0.2",
     "lodash": "^4.13.1",
     "react": "15.2.1",
     "react-native": "github:exponentjs/react-native#sdk-9.0.0",
+    "react-native-elements": "^0.6.0",
+    "react-native-menu": "^0.20.1",
     "react-native-swipeout": "github:dancormier/react-native-swipeout#829b7c01",
     "react-redux": "^4.4.5",
-    "redux": "^3.5.2"
+    "redux": "^3.5.2",
+    "redux-flag-reducer": "^1.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.8.0",

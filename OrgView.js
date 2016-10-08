@@ -4,12 +4,25 @@ let Moment = require('moment');
 import { Router } from './Router'
 import {
   withNavigation,
-  NavigationActions
+  NavigationActions,
+  StackNavigation,
+  DrawerNavigation,
+  DrawerNavigationItem,
 } from '@exponent/ex-navigation';
 
+import {
+  StyleSheet,
+} from 'react-native';
+
+import { Entypo, MaterialIcons } from '@exponent/vector-icons';
 import { connect } from 'react-redux';
+import { Icon, SearchBar } from 'react-native-elements'
+import { SideMenu, List, ListItem } from 'react-native-elements'
 
 import React, { Component } from 'react';
+
+import Menu, { MenuOptions, MenuOption, MenuTrigger } from 'react-native-menu';
+
 
 import {
   ListView,
@@ -64,7 +77,6 @@ function setFocus(node) {
 }
 
 function pushRoute(route) {
-  console.log(route)
   return {
     type: PUSH_ROUTE,
     value: route
@@ -81,6 +93,16 @@ function setSearch(value) {
   return {
     type: SEARCH,
     value
+  }
+}
+
+function side_menu(field, state) {
+  let type = 'SIDE_MENU_OFF'
+  if (state == true) {
+    type = 'SIDE_MENU_ON'
+  }
+  return {
+    type
   }
 }
 
@@ -132,6 +154,15 @@ export function searchReducer(state='k.eq.TODO', action) {
   }
 }
 
+export function toggleSideMenuReducer(state=false, action) {
+  switch (action.type) {
+    case 'SIDE_MENU_ON':
+      return true
+    case 'SIDE_MENU_OFF':
+      return false
+  }
+  return state
+}
 
 export function createNavReducer(navReducer) {
   // TODO(ddohan): This feels hacky
@@ -147,7 +178,6 @@ export function createNavReducer(navReducer) {
           action = NavigationActions.pop(navigatorUID)
           break
         case PUSH_ROUTE:
-          console.log(action)
           action = NavigationActions.push(navigatorUID, Router.getRoute(action.value))
           break
       }
@@ -330,29 +360,27 @@ let PriorityDropdown = PropertyDropdown('priority',
 
 function NodeButton({ node, onPress }) {
   if (Org.numChildren(node) == 0) {
-    return <Text> *  </Text>
+    return <Entypo name="dot-single" size={16} color="black" />
   }
 
   let text = ' -  ';
   if (isHidden(node)) {
-    text = ' +  ';
+    icon = <MaterialIcons name="play-circle-filled" size={20} color="black" />
+  } else {
+    icon = <MaterialIcons name="arrow-drop-down-circle" size={20} color="black" />
   }
   return (
     <TouchableHighlight onPress={() => onPress(node)}>
-      <Text>{text} </Text>
+      {icon}
     </TouchableHighlight>);
 }
 
 let CollapseNodeButton = connect(() => ({}),
                                  (dispatch) => ({ onPress: (node) => dispatch(toggleVisibility(node)) }))(NodeButton);
 
-function HiddenContent() {
-  return <View/>;
-}
-
 function Children({ node }) {
   if (isHidden(node)) {
-    return <HiddenContent/>
+    return <View/>
   }
 
   let nodes = [];
@@ -398,6 +426,10 @@ function TodoRender({ root, searchStr }) {
   }
   );
 
+  if (sorted.length == 0) {
+    sorted = [null]
+  }
+
   let datasource = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2})
   let cloned = datasource.cloneWithRows(sorted);
   let dates = (node) => {
@@ -422,14 +454,17 @@ function TodoRender({ root, searchStr }) {
   return (
     <ListView
     dataSource={cloned}
-    renderRow={(node) => (
-        <View>
+    renderRow={(node) => {
+        if (node == null) {
+          return <Text>No search result</Text>
+        }
+        return <View>
           <View style={[styles.row]}>
             <Keyword keyword={getKeyword(node)}/>
             <Text> {Org.getContent(node)} </Text>
           </View>
           {dates(node)}
-        </View>)}
+        </View>}}
     renderSeparator={(sectionID, rowID) => (<View key={`${sectionID}-${rowID}`} style={styles.separator} />)}
     />
   );
@@ -439,19 +474,47 @@ TodoRender = connect((state) => ({ root: state.doc }))(TodoRender);
 
 /*** Edit node view ***/
 
-function SearchBar({searchStr, onFocus, onTextChange}) {
-  return <TextInput
-  value={searchStr}
-  onChangeText={onTextChange}
-  onFocus={onFocus}
-  style={[styles.flex]}/>
+function OrgSearchBar({searchStr, onFocus, onTextChange}) {
+  return <SearchBar
+           round={true}
+           value={searchStr}
+           onChangeText={onTextChange}
+           onFocus={onFocus}
+           lightTheme={true}
+           inputStyle={{width: 250}}
+  />
 }
 
-SearchBar = connect((state) => ({searchStr: state.search}),
+OrgSearchBarFocus = connect((state) => ({searchStr: state.search}),
                     (dispatch) => ({
-                      onFocus: () => {console.log('focus'),dispatch(pushRoute('search'))},
+                      onFocus: () => dispatch(pushRoute('search')),
                       onTextChange: (value) => dispatch(setSearch(value))
-                    }))(SearchBar)
+                    }))(OrgSearchBar)
+
+// TODO(ddohan): How to dedup with above?
+OrgSearchBarNoFocus = connect((state) => ({searchStr: state.search}),
+                    (dispatch) => ({
+                      onTextChange: (value) => dispatch(setSearch(value))
+                    }))(OrgSearchBar)
+
+function MenuDropdown() {
+  return (
+    <View style={{ padding: 15, flexDirection: 'row', backgroundColor: 'white' }}>
+    <Menu onSelect={(value) => alert(`User selected the number ${value}`)}>
+      <MenuTrigger>
+        <Text style={{ fontSize: 20 }}>&#8942;</Text>
+      </MenuTrigger>
+      <MenuOptions>
+        <MenuOption value={1}>
+          <Text>One</Text>
+        </MenuOption>
+        <MenuOption value={2}>
+          <Text>Two</Text>
+        </MenuOption>
+      </MenuOptions>
+    </Menu>
+  </View>)
+}
 
 /*** Entry points ***/
 
@@ -467,10 +530,11 @@ export class OutlineView extends Component {
   static route = {
     navigationBar: {
       title: 'Outline',
-      renderRight: () => <SearchBar/>
+      renderRight: () => <MenuDropdown/>
     },
   }
 
+       // <TodoSideMenu/>
   render() {
     return (<View style={styles.tree}>
       <Children node={this.props.doc} />
@@ -546,7 +610,7 @@ export class SearchView extends Component {
   static route = {
     navigationBar: {
       title: 'Search',
-      renderRight: () => <SearchBar/>
+      renderRight: () => <OrgSearchBarNoFocus/>
     },
   }
 
@@ -561,7 +625,103 @@ export class SearchView extends Component {
   }
 }
 
-const styles = {
+
+// Treat the DrawerNavigationLayout route like any other route -- you may want to set
+// it as the intiial route for a top-level StackNavigation
+
+onTextChange: (value) => dispatch(setSearch(value))
+
+@connect(data => DrawerNavigationLayout.getDataProps, dispatch => DrawerNavigationLayout.getDispatch)
+export class DrawerNavigationLayout extends React.Component {
+  static getDataProps(data) {
+    return {
+      doc: data.search,
+    };
+  };
+
+  static getDispatch(dispatch) {
+    return {
+      dispatch: dispatch
+    };
+  };
+
+  static route = {
+    navigationBar: {
+      visible: false,
+    }
+  };
+
+  render() {
+    return (
+      <DrawerNavigation
+        id='main'
+        initialItem='outline'
+        drawerWidth={300}
+        renderHeader={this._renderHeader}
+      >
+        <DrawerNavigationItem
+          renderTitle={() => <OrgSearchBarNoFocus/>}
+        >
+        </DrawerNavigationItem>
+
+        <DrawerNavigationItem
+          id='outline'
+          selectedStyle={styles.selectedItemStyle}
+          onPress={() => this.props.dispatch(pushRoute('outline'))}
+          renderTitle={isSelected => this._renderTitle('Outline', isSelected)}
+        >
+          <StackNavigation
+            id='outline'
+            initialRoute={Router.getRoute('outline')}
+          />
+        </DrawerNavigationItem>
+
+        <DrawerNavigationItem
+          id='todo'
+          selectedStyle={styles.selectedItemStyle}
+          onPress={() => {this.props.dispatch(setSearch('k.eq.TODO')); this.props.dispatch(pushRoute('search'))}}
+          renderTitle={isSelected => this._renderTitle('Todo', isSelected)}
+        >
+          <StackNavigation
+            id='search'
+            initialRoute={Router.getRoute('search')}
+          />
+        </DrawerNavigationItem>
+
+        <DrawerNavigationItem
+          id='done'
+          selectedStyle={styles.selectedItemStyle}
+          onPress={() => {this.props.dispatch(setSearch('k.eq.DONE')); this.props.dispatch(pushRoute('search'))}}
+          renderTitle={isSelected => this._renderTitle('Done', isSelected)}
+        >
+          <StackNavigation
+            id='search'
+            initialRoute={Router.getRoute('search')}
+          />
+        </DrawerNavigationItem>
+
+      </DrawerNavigation>
+    );
+  }
+
+  _renderHeader = () => {
+    return (
+      <View style={styles.header}>
+      </View>
+    );
+  };
+
+  _renderTitle(text: string, isSelected: boolean) {
+    return (
+      <Text style={[styles.titleText, isSelected ? styles.selectedTitleText : {}]}>
+        {text}
+      </Text>
+    );
+  };
+}
+
+// TODO(dmrd): Cleanup styles
+const styles = StyleSheet.create({
   tree: {
     padding: 10
   },
@@ -580,5 +740,21 @@ const styles = {
   },
   flex: {
     flex: 1
+  },
+  // From other styles.
+  header: {
+    height: 20
+  },
+
+  selectedItemStyle: {
+    backgroundColor: 'blue'
+  },
+
+  titleText: {
+    fontWeight: 'bold'
+  },
+
+  selectedTitleText: {
+    color: 'white'
   }
-};
+});
