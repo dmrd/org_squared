@@ -22,6 +22,7 @@ import { SideMenu, List, ListItem } from 'react-native-elements'
 import React, { Component } from 'react';
 
 import Menu, { MenuOptions, MenuOption, MenuTrigger } from 'react-native-menu';
+import Swipeout from 'react-native-swipeout';
 
 
 import {
@@ -398,7 +399,7 @@ function Children({ node }) {
   </View>);
 }
 
-function TodoRender({ root, searchStr }) {
+function TodoRender({ root, searchStr, swipeDone }) {
   filtered = Org.search(root, searchStr);
   sorted = Org.sort(filtered, 'pl', (a, b) => {
     let as = a ? a.get('SCHEDULED') : null;
@@ -455,22 +456,33 @@ function TodoRender({ root, searchStr }) {
     <ListView
     dataSource={cloned}
     renderRow={(node) => {
+        const swipeoutButtons = [
+          {
+            text: 'Done',
+            backgroundColor: 'green',
+            underlayColor: 'rgba(0, 0, 0, 1, 0.6)',
+            onPress: () => {swipeDone(node);},
+          },
+        ];
         if (node == null) {
           return <Text>No search result</Text>
         }
-        return <View>
+      return <View>
+        <Swipeout right={swipeoutButtons} autoClose={true}>
           <View style={[styles.row]}>
             <Keyword keyword={getKeyword(node)}/>
             <Text> {Org.getContent(node)} </Text>
           </View>
           {dates(node)}
-        </View>}}
+        </Swipeout>
+      </View>}}
     renderSeparator={(sectionID, rowID) => (<View key={`${sectionID}-${rowID}`} style={styles.separator} />)}
     />
   );
 }
 
-TodoRender = connect((state) => ({ root: state.doc }))(TodoRender);
+TodoRender = connect((state) => ({ root: state.doc }),
+                     (dispatch) => ({swipeDone: (node) => dispatch(setProperty(node, ['meta', 'keyword'], 'DONE'))}))(TodoRender);
 
 /*** Edit node view ***/
 
