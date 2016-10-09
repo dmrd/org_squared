@@ -452,6 +452,7 @@ function TodoRender({ root, searchStr, setState }) {
       </View>);
   }
 
+  // TODO(mgyucht): use a real state machine defined by #+TODO_HEADINGS if provided
   let getSwipeConfiguration = (node) => {
     if (getKeyword(node) === 'TODO') {
       return {
