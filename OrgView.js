@@ -399,7 +399,7 @@ function Children({ node }) {
   </View>);
 }
 
-function TodoRender({ root, searchStr, swipeDone }) {
+function TodoRender({ root, searchStr, setState }) {
   filtered = Org.search(root, searchStr);
   sorted = Org.sort(filtered, 'pl', (a, b) => {
     let as = a ? a.get('SCHEDULED') : null;
@@ -442,7 +442,7 @@ function TodoRender({ root, searchStr, swipeDone }) {
     for (type of ['SCHEDULED', 'DEADLINE', 'CLOSED']) {
       if (planning.has(type)) {
         dates.push(
-         <Text key={type}> {type[0]}: {dateToRelativeText(planning.get(type))} </Text> 
+          <Text key={type}> {type[0]}: {dateToRelativeText(planning.get(type))} </Text>
         );
       }
     }
@@ -452,16 +452,31 @@ function TodoRender({ root, searchStr, swipeDone }) {
       </View>);
   }
 
+  let getSwipeConfiguration = (node) => {
+    if (getKeyword(node) === 'TODO') {
+      return {
+        buttonTitle: 'Done',
+        nextState: 'DONE',
+      };
+    } else {
+      return {
+        buttonTitle: 'Todo',
+        nextState: 'TODO',
+      }
+    }
+  };
+
   return (
     <ListView
     dataSource={cloned}
     renderRow={(node) => {
+        const swipeConfig = getSwipeConfiguration(node);
         const swipeoutButtons = [
           {
-            text: 'Done',
+            text: swipeConfig.buttonTitle,
             backgroundColor: 'green',
             underlayColor: 'rgba(0, 0, 0, 1, 0.6)',
-            onPress: () => {swipeDone(node);},
+            onPress: () => {setState(node, swipeConfig.nextState)},
           },
         ];
         if (node == null) {
@@ -482,7 +497,7 @@ function TodoRender({ root, searchStr, swipeDone }) {
 }
 
 TodoRender = connect((state) => ({ root: state.doc }),
-                     (dispatch) => ({swipeDone: (node) => dispatch(setProperty(node, ['meta', 'keyword'], 'DONE'))}))(TodoRender);
+                     (dispatch) => ({setState: (node, newState) => dispatch(setProperty(node, ['meta', 'keyword'], newState))}))(TodoRender);
 
 /*** Edit node view ***/
 
