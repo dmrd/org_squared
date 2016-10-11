@@ -87,6 +87,7 @@ repeater = mark:$mark value:$number* tsunit:$tsunit {
   })
 }
 
+// SCHEDULED/DEADLINE/CLOSED timestamps
 planning = entries:padded_planning_entry* EOL {
   let entry;
   let keywords = {};

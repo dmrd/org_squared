@@ -9,11 +9,16 @@ let {
   Set
 } = Immutable;
 
-let doc_headlines = "* 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1"
-let doc_just_headlines = "** 1\n*** 2\n* 3\n"
-let doc_tags = "* TODO [#A] 1 :tag:tag2:"
-let doc_scheduled = "* test\nSCHEDULED: <2016-06-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n"
-let doc_timestamps = "* TODO 1\n** DONE 1.1\nSCHEDULED: <2016-09-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n*** TODO 1.1.1\n* 2\nDEADLINE: <2016-07-10 Fri> SCHEDULED: <2016-06-05 Fri>\n* TODO 3\n* DONE 4"
+let doc_headlines = "* 1\n** 1.1\n** 1.2\n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1";
+let doc_just_headlines = "** 1\n*** 2\n* 3\n";
+let doc_tags = "* TODO [#A] 1 :tag:tag2:";
+let doc_scheduled = "* test\nSCHEDULED: <2016-06-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n";
+let doc_timestamps = "* TODO 1\n** DONE 1.1\nSCHEDULED: <2016-09-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n*** TODO 1.1.1\n* 2\nDEADLINE: <2016-07-10 Fri> SCHEDULED: <2016-06-05 Fri>\n* TODO 3\n* DONE 4";
+let doc_timestamps_reformatted = "* TODO 1\n** DONE 1.1\nSCHEDULED: <2016-09-01 Wed +1w> DEADLINE: <2016-06-02 Thu 8:00>\n*** TODO 1.1.1\n* 2\nSCHEDULED: <2016-06-05 Fri> DEADLINE: <2016-07-10 Fri>\n* TODO 3\n* DONE 4";
+let doc_with_sections = "* 1\nlots of stuff\n going on \n in these sections** 1.1\n** 1.2\nso many great notes \n*** 1.2.1\n*** 1.2.2\n** 1.3\n* 2\n** 2.1";
+
+// Large test doc used to test UI so far
+let doc_large = "* DONE [#A] 1. I did this :project:\nSCHEDULED: <2016-06-05 Sun>\n:LOGBOOK:\nCLOCK: [2016-06-03 Fri 18:00]--[2016-06-03 Fri 19:30] =>  1:30\n- I did MORE of it\nCLOCK: [2016-06-02 Thu 18:00]--[2016-06-02 Thu 19:00] =>  1:00\n- I did part of it!\n:END:\n** 1.1 Look at all\n** 1.2 Of these headlines\n*** 1.2.1 Wow such hierarchy\n**** TODO 1.2.1.1 much test\n* 2. Work                                                              :work:\n** TODO [#A] 2.1 Do this or you lose your job!\nSCHEDULED: <2016-06-04 Sat> DEADLINE: <2016-06-06 Mon>\n*** 2.1.1 You should probably\n** TODO 2.2 so many things to do\n** TODO 2.3 and so little time\nSCHEDULED: <2016-06-06 Mon>\n** TODO 2.4 to do them all\n** DONE 2.5 Except this one. You did this one.\n** DONE 2.6 important tasks\nCLOSED: [2016-06-03 Fri 14:59]\n* 3. Home :home:\n** TODO 3.1 Remember garbage day?\nSCHEDULED: <2016-06-16 Thu +1w>\n:PROPERTIES:\n:LAST_REPEAT: [2016-06-03 Fri 21:32]\n:END:\n:LOGBOOK:\n- State \"DONE\"       from \"TODO\"       [2016-06-03 Fri 21:32]\n:END:\n** TODO 3.2 You should go to that thing\nSCHEDULED: <2016-06-13 Mon 20:00>\n*** DONE 3.2.1 Wow go buy some gifts or something \nDEADLINE: <2016-06-12 Sun> CLOSED: [2016-06-11 Sat 21:33]\n* 4. hobbies\n** 4.1 hobby #1\n*** TODO 4.1.1 Things and stuff hobby #1\n** 4.2 hobby #2\n*** TODO 4.2.1 Things and stuff hobby #2\n** 4.3 hobby #3\n*** TODO 4.3.1 Things and stuff hobby #3\n** 4.4 hobby #4\n*** TODO 4.4.1 Things and stuff hobby #4\n**** TODO this one has lots of nesting\n***** TODO and many children\n***** TODO to make the tree traversal complex\n***** TODO Although not all tasks are TODO here\n***** DONE Like this one.  This one is done";
 
 function node(type, content, children = List()) {
   return {
@@ -181,22 +186,34 @@ describe('search and sort', () => {
   });
 });
 
-describe.only('export', () => {
+describe('export', () => {
   let test_export = (string) => {
-    parsed = parser.parse(string)
-    exported = Org.export_subtree(parsed)
-    expect(exported).to.eql(string.trim())
+    parsed = parser.parse(string);
+    exported = Org.export_subtree(parsed);
+    expect(exported).to.eql(string.trim());
+  };
+
+  let test_reformat = (string, out_string) => {
+    parsed = parser.parse(string);
+    exported = Org.export_subtree(parsed);
+    expect(exported).to.eql(out_string);
   };
 
   it('can export headlines', () => {
-    test_export(doc_headlines)
-    test_export(doc_just_headlines)
+    // test_export(doc_headlines);
+    test_export(doc_just_headlines);
   });
   it('can export tags', () => {
-    test_export(doc_tags)
+    test_export(doc_tags);
   });
-  // it('can export timestamps', () => {
-  //  test_export(doc_scheduled)
-  //  test_export(doc_timestamps)
-  // });
+  it('can export timestamps', () => {
+    test_export(doc_scheduled);
+    test_reformat(doc_timestamps, doc_timestamps_reformatted);
+  });
+  it('can export sections', () => {
+    test_export(doc_with_sections);
+  });
+  it('can export large doc ', () => {
+    test_export(doc_large);
+  });
 });

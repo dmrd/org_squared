@@ -70,7 +70,7 @@ export function tsFromDate(date) {
                         day: date.getDate(),
                         hour: date.getHours(),
                         minute: date.getMinutes()
-                       });
+  });
 }
 
 function nowTs() {
@@ -152,14 +152,14 @@ export function numChildren(cursor) {
 /***** Cursor logic *****/
 
 /*
- Return the path corresponding to cursor
+   Return the path corresponding to cursor
  */
 export function getPath(cursor) {
   return cursor._keyPath;
 }
 
 /*
- Create a cursor into `doc` with `path`
+   Create a cursor into `doc` with `path`
  */
 export function createCursor(doc, path = []) {
   return Cursor.from(doc, path, () => {});
@@ -169,7 +169,7 @@ export function createCursor(doc, path = []) {
 /***** Traversing tree *****/
 
 /*
- Return the root document node for a cursor
+   Return the root document node for a cursor
  */
 export function getDoc(cursor) {
   return createCursor(cursor._rootData);
@@ -392,15 +392,15 @@ function tsValue(str) {
 
   // Named days
   switch (str) {
-  case 'yesterday':
-    addDays(-1);
-    return date;
-  case 'today':
-    return date;
-  case 'tomorrow':
-    addDays(1);
-    return date;
-  default:
+    case 'yesterday':
+      addDays(-1);
+      return date;
+    case 'today':
+      return date;
+    case 'tomorrow':
+      addDays(1);
+      return date;
+    default:
   }
 
   // # offsets, e.g. 1y, 2w, -3d
@@ -455,7 +455,7 @@ function createFilter(str) {
   } else if (type === 'object') {
     op = {'eq': (a,b) => a == b,
           'neq': (a,b) => a != b
-         }[operatorStr];
+    }[operatorStr];
   }
 
   if (op == null) {
@@ -550,32 +550,142 @@ export function sort(nodes, property, comparator=null) {
 
 export function export_subtree(subtree) {
   /* Constructs a string representing given subtree as an org mode file */
-  cur = subtree;
-  result = [];
+  let cur = subtree;
+  let result = [];
   while (!!cur) {
-    headline = printHeadline(cur);
-    result = result.concat(headline);
+    let exported = '';
+    if (isDoc(cur)) {
+      exported = printDoc(cur);
+    }
+
+    if (isHeadline(cur)) {
+      exported = printHeadline(cur);
+    }
+
+    if (isSection(cur)) {
+      exported = printSection(cur);
+    }
+
+    result.push(exported);
     cur = next(cur);
   }
   joined = result.join('');
-  return joined.trim()
+  return joined.trim();
 }
+
+function printDoc(headline) {
+  // TODO(ddohan): Print doc level metadata
+  return '';
+}
+
+function printSection(section) {
+  if (!isSection(section)) {
+    return '';
+  }
+  return getContent(section) + '\n'
+}
+
 
 function printHeadline(headline) {
   if (!isHeadline(headline)) {
-    return [];
+    return ''
   }
-  return ['*'.repeat(level(headline)), ' ', getContent(headline), '\n'];
+  let result = ['*'.repeat(level(headline))];
+
+  keyword = getKeyword(headline);
+  priority = getPriority(headline);
+  content = getContent(headline);
+  tags = getTags(headline);
+
+  if (!!keyword) {
+    result.push(' ');
+    result.push(keyword);
+  }
+
+  if (!!priority) {
+    result.push(' [#' + priority);
+    result.push(']');
+  }
+
+  if (!!content) {
+    result.push(' ');
+    result.push(getContent(headline));
+  }
+
+  if (!!tags) {
+    if (tags.size > 0) {
+      result.push(' :');
+      for (tag of tags.values()) {
+        result.push(tag);
+        result.push(':');
+      }
+    }
+  }
+
+  result.push('\n')
+
+  let planning = printPlanning(headline)
+  if (planning) {
+    result.push(planning)
+    result.push('\n')
+  }
+
+  result = result.join('');
+  return result;
 }
 
-function printTags(headline) {
+function printPlanning(headline) {
+  scheduled = getScheduled(headline)
+  deadline = getDeadline(headline)
+  closed = getClosed(headline)
+  let result = []
+  if (!!scheduled) {
+    result.push(['SCHEDULED: ', printTs(scheduled)].join(''))
+  }
+  if (!!deadline) {
+    result.push(['DEADLINE: ', printTs(deadline)].join(''))
+  }
+  if (!!closed) {
+    result.push(['CLOSED: ', printTs(closed)].join(''))
+  }
 
+  return result.join(' ')
 }
 
-function printContent(headline) {
+function printTs(ts) {
+  let result = []
+  if (ts.active) {
+    result.push('<')
+  } else {
+    result.push('[')
+  }
 
-}
+  result.push(ts.year)
+  result.push('-')
+  result.push(ts.month)
+  result.push('-')
+  result.push(ts.day)
+  result.push(' ')
+  result.push(ts.dayname)
+  if (!!ts.hour) {
+    result.push(' ')
+    result.push(ts.hour)
+    result.push(':')
+    result.push(ts.minute)
+  }
 
-function printProps(headline) {
+  if (ts.repeater) {
+    let repeater = ts.repeater
+    result.push(' ')
+    result.push(repeater.mark)
+    result.push(repeater.value)
+    result.push(repeater.unit)
+  }
 
+  if (ts.active) {
+    result.push('>')
+  } else {
+    result.push(']')
+  }
+  return result.join('')
 }
