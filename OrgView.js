@@ -22,6 +22,7 @@ import { SideMenu, List, ListItem } from 'react-native-elements'
 import React, { Component } from 'react';
 
 import Menu, { MenuOptions, MenuOption, MenuTrigger } from 'react-native-menu';
+import Swipeout from 'react-native-swipeout';
 
 
 import {
@@ -398,7 +399,7 @@ function Children({ node }) {
   </View>);
 }
 
-function TodoRender({ root, searchStr }) {
+function TodoRender({ root, searchStr, setState }) {
   filtered = Org.search(root, searchStr);
   sorted = Org.sort(filtered, 'pl', (a, b) => {
     let as = a ? a.get('SCHEDULED') : null;
@@ -441,7 +442,7 @@ function TodoRender({ root, searchStr }) {
     for (type of ['SCHEDULED', 'DEADLINE', 'CLOSED']) {
       if (planning.has(type)) {
         dates.push(
-         <Text key={type}> {type[0]}: {dateToRelativeText(planning.get(type))} </Text> 
+          <Text key={type}> {type[0]}: {dateToRelativeText(planning.get(type))} </Text>
         );
       }
     }
@@ -451,26 +452,53 @@ function TodoRender({ root, searchStr }) {
       </View>);
   }
 
+  // TODO(mgyucht): use a real state machine defined by #+TODO_HEADINGS if provided
+  let getSwipeConfiguration = (node) => {
+    if (getKeyword(node) === 'TODO') {
+      return {
+        buttonTitle: 'Done',
+        nextState: 'DONE',
+      };
+    } else {
+      return {
+        buttonTitle: 'Todo',
+        nextState: 'TODO',
+      }
+    }
+  };
+
   return (
     <ListView
     dataSource={cloned}
     renderRow={(node) => {
+        const swipeConfig = getSwipeConfiguration(node);
+        const swipeoutButtons = [
+          {
+            text: swipeConfig.buttonTitle,
+            backgroundColor: 'green',
+            underlayColor: 'rgba(0, 0, 0, 1, 0.6)',
+            onPress: () => {setState(node, swipeConfig.nextState)},
+          },
+        ];
         if (node == null) {
           return <Text>No search result</Text>
         }
-        return <View>
+      return <View>
+        <Swipeout right={swipeoutButtons} autoClose={true}>
           <View style={[styles.row]}>
             <Keyword keyword={getKeyword(node)}/>
             <Text> {Org.getContent(node)} </Text>
           </View>
           {dates(node)}
-        </View>}}
+        </Swipeout>
+      </View>}}
     renderSeparator={(sectionID, rowID) => (<View key={`${sectionID}-${rowID}`} style={styles.separator} />)}
     />
   );
 }
 
-TodoRender = connect((state) => ({ root: state.doc }))(TodoRender);
+TodoRender = connect((state) => ({ root: state.doc }),
+                     (dispatch) => ({setState: (node, newState) => dispatch(setProperty(node, ['meta', 'keyword'], newState))}))(TodoRender);
 
 /*** Edit node view ***/
 
